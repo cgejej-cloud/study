@@ -200,7 +200,9 @@ export default function MatchHistoryPage() {
                   }`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 text-sm">
-                      <span className="font-semibold text-gray-800">{opponent.name}</span>
+                      <Link href={`/players/${opponent.id}`} className="font-semibold text-gray-800 hover:text-green-700 hover:underline">
+                        {opponent.name}
+                      </Link>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
                         m.status === "confirmed" ? (iWon ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-500") :
                         m.status === "pending"   ? "bg-yellow-50 text-yellow-600" :

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Avatar from "@/components/Avatar";
 
 type RankEntry = {
   id: string;
@@ -13,6 +14,7 @@ type RankEntry = {
   isPlacing: boolean;
   placementLeft: number;
   winRate: number | null;
+  streak: { type: "W" | "L"; count: number } | null;
 };
 
 const TIER_INFO = [
@@ -156,8 +158,25 @@ export default function RankingPage() {
                         <span className={`ml-1 text-xs font-semibold ${tier.color}`}>{tier.name}</span>
                       </td>
                       <td className="px-4 py-3 font-semibold">
-                        {entry.name}
-                        {isMe && <span className="ml-2 text-xs text-green-600 font-normal">(나)</span>}
+                        <div className="flex items-center gap-2">
+                          <Avatar name={entry.name} size="sm" />
+                          <Link href={`/players/${entry.id}`} className="hover:text-green-700 hover:underline">
+                            {entry.name}
+                          </Link>
+                          {isMe && <span className="text-xs text-green-600 font-normal">(나)</span>}
+                          {entry.streak && entry.streak.count >= 3 && (
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                entry.streak.type === "W"
+                                  ? "bg-orange-100 text-orange-600"
+                                  : "bg-gray-100 text-gray-500"
+                              }`}
+                              title={entry.streak.type === "W" ? `${entry.streak.count}연승` : `${entry.streak.count}연패`}
+                            >
+                              {entry.streak.type === "W" ? "🔥" : "❄️"} {entry.streak.count}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 font-bold text-gray-800">{entry.eloRating}점</td>
                       <td className="px-4 py-3 text-blue-600 font-medium">{entry.wins}</td>
@@ -202,8 +221,13 @@ export default function RankingPage() {
                     return (
                       <tr key={entry.id} className={isMe ? "bg-green-50" : "hover:bg-gray-50"}>
                         <td className="px-4 py-3 font-semibold">
-                          {entry.name}
-                          {isMe && <span className="ml-2 text-xs text-green-600 font-normal">(나)</span>}
+                          <div className="flex items-center gap-2">
+                            <Avatar name={entry.name} size="sm" />
+                            <Link href={`/players/${entry.id}`} className="hover:text-green-700 hover:underline">
+                              {entry.name}
+                            </Link>
+                            {isMe && <span className="text-xs text-green-600 font-normal">(나)</span>}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">

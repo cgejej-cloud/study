@@ -88,6 +88,7 @@ export default function Header() {
                   </span>
                 )}
               </Link>
+              {/* admin link */}
               {session.role === "admin" && (
                 <Link
                   href="/admin"
