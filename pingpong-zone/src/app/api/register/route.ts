@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { validateEmail, validateName, validatePassword, validatePhone } from "@/lib/validation";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
-  const { name, email, password, phone } = await req.json();
+  // IP 기준 회원가입 레이트 리밋 (10회/시간)
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || "unknown";
+  const limit = rateLimit(`register:${ip}`, 10, 60 * 60 * 1000);
+  if (!limit.ok) {
+    return NextResponse.json({ error: "잠시 후 다시 시도해주세요." }, { status: 429 });
+  }
+
+  const { name, email: emailRaw, password, phone } = await req.json();
+  const email = typeof emailRaw === "string" ? emailRaw.trim().toLowerCase() : "";
 
   if (!validateName(name)) {
     return NextResponse.json({ error: "이름은 2~30자로 입력해주세요." }, { status: 400 });

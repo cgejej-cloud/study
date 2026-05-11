@@ -1,9 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const SECRET = new TextEncoder().encode(
-  process.env.SESSION_SECRET || "pingpong-zone-secret-key-minimum-32-chars"
-);
+const SECRET_RAW = process.env.SESSION_SECRET || "pingpong-zone-secret-key-minimum-32-chars-dev-only";
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  // 프로덕션에서 기본값 사용 금지 — 빌드 타임에 경고
+  console.error("[FATAL] SESSION_SECRET 환경변수가 설정되지 않았습니다. 프로덕션에서는 반드시 설정해야 합니다.");
+}
+const SECRET = new TextEncoder().encode(SECRET_RAW);
 const COOKIE_NAME = "session";
 
 export type SessionPayload = {

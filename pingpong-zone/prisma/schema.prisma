@@ -42,6 +42,8 @@ model BlockedSlot {
   reason    String?
   createdAt DateTime @default(now())
   table     Table    @relation(fields: [tableId], references: [id])
+
+  @@index([tableId, date])
 }
 
 model Reservation {
@@ -61,6 +63,11 @@ model Reservation {
   table          Table         @relation(fields: [tableId], references: [id])
   parent         Reservation?  @relation("RecurringGroup", fields: [parentId], references: [id])
   children       Reservation[] @relation("RecurringGroup")
+
+  @@index([userId, date])
+  @@index([tableId, date, status])
+  @@index([date, status])
+  @@index([parentId])
 }
 
 model Match {
@@ -78,6 +85,11 @@ model Match {
   player2     User      @relation("Player2Matches", fields: [player2Id], references: [id])
   winner      User      @relation("WonMatches", fields: [winnerId], references: [id])
   season      Season?   @relation(fields: [seasonId], references: [id])
+
+  @@index([player1Id, status])
+  @@index([player2Id, status])
+  @@index([status, createdAt])
+  @@index([seasonId])
 }
 
 model Notice {
@@ -87,6 +99,8 @@ model Notice {
   isPinned  Boolean  @default(false)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  @@index([isActive, isPinned, createdAt])
 }
 
 model Season {
