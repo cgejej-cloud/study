@@ -116,6 +116,10 @@ export default function AdminSeasonsPage() {
                 </p>
               </div>
               <div className="flex gap-1.5 shrink-0">
+                <Link href={`/seasons/${s.id}`}
+                  className="text-xs border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  보기
+                </Link>
                 {!s.isActive && !s.endDate && (
                   <button onClick={() => handleAction(s.id, "activate")}
                     className="text-xs bg-green-700 text-white px-3 py-1.5 rounded-lg hover:bg-green-600 transition-colors">
