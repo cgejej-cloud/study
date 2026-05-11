@@ -150,6 +150,16 @@ export default function PlayerProfilePage() {
         ))}
       </div>
 
+      {/* 다시 도전 CTA */}
+      {player.headToHead && (
+        <Link
+          href={`/ranking/record?opponent=${player.id}`}
+          className="block bg-green-700 hover:bg-green-600 text-white font-semibold text-center py-3 rounded-xl transition-colors"
+        >
+          🏓 {player.name}님과 경기 기록하기
+        </Link>
+      )}
+
       {/* 헤드투헤드 */}
       {player.headToHead && (player.headToHead.wins + player.headToHead.losses > 0) && (
         <div className="bg-gradient-to-r from-blue-50 to-red-50 border border-gray-100 rounded-xl p-4 shadow-sm">

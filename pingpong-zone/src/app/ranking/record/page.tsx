@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 import { PLACEMENT_GAMES, getK, expectedScore as expScore, calcEloChange as clientCalcEloChange } from "@/lib/elo";
@@ -39,8 +39,10 @@ function calcEloChange(myElo: number, oppElo: number, myGames: number, iWon: boo
   return clientCalcEloChange(myElo, getK(myGames), expScore(myElo, oppElo), iWon ? 1 : 0);
 }
 
-export default function RecordMatchPage() {
+function RecordMatchInner() {
   const router = useRouter();
+  const params = useSearchParams();
+  const preselectId = params.get("opponent");
   const [myId, setMyId] = useState<string>("");
   const [users, setUsers] = useState<RankEntry[]>([]);
   const [selectedOpponent, setSelectedOpponent] = useState<RankEntry | null>(null);
@@ -71,6 +73,13 @@ export default function RecordMatchPage() {
   }, [router]);
 
   const me = users.find((u) => u.id === myId) ?? null;
+
+  // URL ?opponent= 로 사전 선택
+  useEffect(() => {
+    if (!preselectId || selectedOpponent || users.length === 0) return;
+    const found = users.find((u) => u.id === preselectId);
+    if (found) setSelectedOpponent(found);
+  }, [preselectId, selectedOpponent, users]);
   const opponents = users.filter((u) => u.id !== myId && u.name.includes(search));
 
   async function handleSubmit() {
@@ -327,5 +336,13 @@ export default function RecordMatchPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function RecordMatchPage() {
+  return (
+    <Suspense fallback={<div className="max-w-lg mx-auto text-center text-gray-400 py-12">불러오는 중...</div>}>
+      <RecordMatchInner />
+    </Suspense>
   );
 }
