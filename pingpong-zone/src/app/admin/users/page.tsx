@@ -19,6 +19,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/users")
@@ -32,15 +33,24 @@ export default function AdminUsersPage() {
   }, [router]);
 
   async function toggleRole(user: User) {
+    if (toggling === user.id) return;
     const newRole = user.role === "admin" ? "user" : "admin";
     if (!confirm(`${user.name}님을 ${newRole === "admin" ? "관리자" : "일반회원"}로 변경하시겠습니까?`)) return;
-    const res = await fetch(`/api/admin/users/${user.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: newRole }),
-    });
-    if (res.ok) {
-      setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, role: newRole } : u));
+    setToggling(user.id);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (res.ok) {
+        setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, role: newRole } : u));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "변경에 실패했습니다.");
+      }
+    } finally {
+      setToggling(null);
     }
   }
 
@@ -69,8 +79,8 @@ export default function AdminUsersPage() {
       {loading ? (
         <p className="text-gray-400">불러오는 중...</p>
       ) : (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <table className="w-full text-sm min-w-[720px]">
             <thead className="bg-gray-50">
               <tr>
                 {["이름", "이메일", "연락처", "예약수", "가입일", "권한", ""].map((h) => (
@@ -96,9 +106,10 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     <button
                       onClick={() => toggleRole(u)}
-                      className="text-xs text-blue-500 hover:underline"
+                      disabled={toggling === u.id}
+                      className="text-xs text-blue-500 hover:underline disabled:opacity-40 disabled:cursor-wait"
                     >
-                      {u.role === "admin" ? "일반으로 변경" : "관리자로 변경"}
+                      {toggling === u.id ? "변경 중..." : u.role === "admin" ? "일반으로 변경" : "관리자로 변경"}
                     </button>
                   </td>
                 </tr>

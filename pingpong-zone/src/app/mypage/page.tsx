@@ -10,6 +10,8 @@ type Reservation = {
   startTime: string;
   endTime: string;
   status: string;
+  isRecurring?: boolean;
+  parentId?: string | null;
   table: { name: string };
 };
 
@@ -76,9 +78,27 @@ export default function MyPage() {
     return () => { cancelled = true; };
   }, [tick, router]);
 
-  async function handleCancel(id: string) {
-    if (!confirm("예약을 취소하시겠습니까?")) return;
-    await fetch(`/api/reservations/${id}`, { method: "PATCH" });
+  async function handleCancel(r: Reservation) {
+    const isSeries = r.isRecurring || !!r.parentId;
+    let cancelAll = false;
+    if (isSeries) {
+      const choice = confirm(
+        "이 예약은 반복 예약입니다.\n[확인] 누르면 앞으로의 모든 반복 예약을 일괄 취소하고,\n[취소] 누르면 이번 회차만 취소합니다."
+      );
+      cancelAll = choice;
+    } else {
+      if (!confirm("예약을 취소하시겠습니까?")) return;
+    }
+    const res = await fetch(`/api/reservations/${r.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cancelAll }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "취소에 실패했습니다.");
+      return;
+    }
     setTick((t) => t + 1);
   }
 
@@ -199,13 +219,16 @@ export default function MyPage() {
               <div key={r.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center justify-between shadow-sm">
                 <div>
                   <span className="font-semibold text-green-700 text-sm">{r.table.name}</span>
+                  {(r.isRecurring || r.parentId) && (
+                    <span className="ml-1.5 text-[10px] font-semibold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full align-middle">반복</span>
+                  )}
                   <span className="text-gray-400 mx-2">·</span>
                   <span className="text-sm text-gray-700">{formatDate(r.date)}</span>
                   <span className="text-gray-400 mx-2">·</span>
                   <span className="text-sm text-gray-700">{r.startTime} ~ {r.endTime}</span>
                 </div>
                 <button
-                  onClick={() => handleCancel(r.id)}
+                  onClick={() => handleCancel(r)}
                   className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
                 >
                   취소

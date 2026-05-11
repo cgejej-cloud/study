@@ -15,9 +15,16 @@ export async function PATCH(
   const { name, description, isActive } = await req.json();
 
   const data: Record<string, unknown> = {};
-  if (name !== undefined) data.name = name;
-  if (description !== undefined) data.description = description;
-  if (isActive !== undefined) data.isActive = isActive;
+  if (name !== undefined) {
+    if (typeof name !== "string" || !name.trim()) {
+      return NextResponse.json({ error: "탁구대 이름을 입력해주세요." }, { status: 400 });
+    }
+    data.name = name.trim();
+  }
+  if (description !== undefined) {
+    data.description = typeof description === "string" ? description.trim() : null;
+  }
+  if (isActive !== undefined) data.isActive = !!isActive;
 
   const updated = await prisma.table.update({ where: { id }, data });
   return NextResponse.json(updated);

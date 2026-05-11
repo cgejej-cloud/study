@@ -15,6 +15,7 @@ export async function GET() {
 
   const todayStr = now.toISOString().split("T")[0];
 
+  // 시간/탁구대별은 DB groupBy 로 집계 (메모리 효율)
   const [
     totalUsers,
     todayRes,
@@ -22,7 +23,9 @@ export async function GET() {
     monthRes,
     totalMatches,
     disputedCount,
-    allReservations,
+    hourGroups,
+    tableGroups,
+    dateGroups,
     tables,
   ] = await Promise.all([
     prisma.user.count(),
@@ -31,9 +34,20 @@ export async function GET() {
     prisma.reservation.count({ where: { createdAt: { gte: monthStart }, status: "confirmed" } }),
     prisma.match.count({ where: { status: "confirmed" } }),
     prisma.match.count({ where: { status: "disputed" } }),
-    prisma.reservation.findMany({
+    prisma.reservation.groupBy({
+      by: ["startTime"],
       where: { status: "confirmed" },
-      select: { startTime: true, tableId: true, date: true },
+      _count: { _all: true },
+    }),
+    prisma.reservation.groupBy({
+      by: ["tableId"],
+      where: { status: "confirmed" },
+      _count: { _all: true },
+    }),
+    prisma.reservation.groupBy({
+      by: ["date"],
+      where: { status: "confirmed" },
+      _count: { _all: true },
     }),
     prisma.table.findMany({ select: { id: true, name: true } }),
   ]);
@@ -42,25 +56,21 @@ export async function GET() {
   const HOURS = ["09","10","11","12","13","14","15","16","17","18","19","20","21"];
   const hourCounts: Record<string, number> = {};
   HOURS.forEach(h => { hourCounts[h] = 0; });
-  for (const r of allReservations) {
-    const h = r.startTime.slice(0, 2);
-    if (hourCounts[h] !== undefined) hourCounts[h]++;
+  for (const g of hourGroups) {
+    const h = g.startTime.slice(0, 2);
+    if (hourCounts[h] !== undefined) hourCounts[h] += g._count._all;
   }
 
-  // 탁구대별 예약 집계
-  const tableCounts: Record<string, number> = {};
-  for (const t of tables) tableCounts[t.id] = 0;
-  for (const r of allReservations) {
-    if (tableCounts[r.tableId] !== undefined) tableCounts[r.tableId]++;
-  }
-  const tableStats = tables.map(t => ({ name: t.name, count: tableCounts[t.id] }));
+  // 탁구대별
+  const tableCountMap = new Map(tableGroups.map(g => [g.tableId, g._count._all]));
+  const tableStats = tables.map(t => ({ name: t.name, count: tableCountMap.get(t.id) ?? 0 }));
 
-  // 요일별 예약
+  // 요일별 — date groupBy 결과를 메모리에서 dow 변환 (date 별 1행)
   const DOW_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
-  const dowCounts: number[] = [0, 0, 0, 0, 0, 0, 0];
-  for (const r of allReservations) {
-    const d = new Date(r.date + "T00:00:00").getDay();
-    dowCounts[d]++;
+  const dowCounts = [0, 0, 0, 0, 0, 0, 0];
+  for (const g of dateGroups) {
+    const d = new Date(g.date + "T00:00:00").getDay();
+    dowCounts[d] += g._count._all;
   }
   const dowStats = DOW_LABELS.map((label, i) => ({ label, count: dowCounts[i] }));
 

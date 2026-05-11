@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession, createSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { validateName, validatePassword, validatePhone } from "@/lib/validation";
 
 export async function GET() {
   const session = await getSession();
@@ -15,14 +16,20 @@ export async function PATCH(req: NextRequest) {
 
   const { name, phone, currentPassword, newPassword } = await req.json();
 
-  if (!name?.trim()) {
-    return NextResponse.json({ error: "이름을 입력해주세요." }, { status: 400 });
+  if (!validateName(name)) {
+    return NextResponse.json({ error: "이름은 2~30자로 입력해주세요." }, { status: 400 });
+  }
+  if (phone && !validatePhone(phone)) {
+    return NextResponse.json({ error: "올바른 전화번호 형식이 아닙니다." }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({ where: { id: session.id } });
   if (!user) return NextResponse.json({ error: "사용자를 찾을 수 없습니다." }, { status: 404 });
 
   if (newPassword) {
+    if (!validatePassword(newPassword)) {
+      return NextResponse.json({ error: "새 비밀번호는 8자 이상이어야 합니다." }, { status: 400 });
+    }
     if (!currentPassword) {
       return NextResponse.json({ error: "현재 비밀번호를 입력해주세요." }, { status: 400 });
     }
