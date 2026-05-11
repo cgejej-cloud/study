@@ -38,6 +38,19 @@ describe("calcEloChange", () => {
   });
 });
 
+describe("ELO regression scenarios", () => {
+  it("placement player beating 1500-rated opponent gains ~+38", () => {
+    const r = computeMatchEloChanges({ myElo: 1000, oppElo: 1500, myGames: 0, oppGames: 50, iWon: true });
+    expect(r.p1Change).toBeGreaterThanOrEqual(35);
+    expect(r.p1Change).toBeLessThanOrEqual(48);
+  });
+  it("losing to weaker opponent costs more than losing to stronger", () => {
+    const lossToWeak   = computeMatchEloChanges({ myElo: 1500, oppElo: 1000, myGames: 50, oppGames: 50, iWon: false });
+    const lossToStrong = computeMatchEloChanges({ myElo: 1500, oppElo: 2000, myGames: 50, oppGames: 50, iWon: false });
+    expect(lossToWeak.p1Change).toBeLessThan(lossToStrong.p1Change);
+  });
+});
+
 describe("computeMatchEloChanges", () => {
   it("zero-sum after rounding for equal ratings (both normal)", () => {
     const r = computeMatchEloChanges({ myElo: 1000, oppElo: 1000, myGames: 10, oppGames: 10, iWon: true });
