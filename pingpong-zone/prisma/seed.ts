@@ -3,9 +3,17 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-const SAMPLE_NAMES = [
-  "김민준", "이서연", "박지호", "최수아", "정도윤",
-  "강하윤", "조시우", "윤예린", "임선우", "한지원",
+const SAMPLE_NAMES: Array<{ name: string; slug: string }> = [
+  { name: "김민준", slug: "minjun" },
+  { name: "이서연", slug: "seoyeon" },
+  { name: "박지호", slug: "jiho" },
+  { name: "최수아", slug: "suah" },
+  { name: "정도윤", slug: "doyun" },
+  { name: "강하윤", slug: "hayun" },
+  { name: "조시우", slug: "siwoo" },
+  { name: "윤예린", slug: "yerin" },
+  { name: "임선우", slug: "sunwoo" },
+  { name: "한지원", slug: "jiwon" },
 ];
 
 async function main() {
@@ -32,8 +40,8 @@ async function main() {
   // 데모 사용자 (--with-users 옵션 시)
   if (process.argv.includes("--with-users")) {
     const userPass = await bcrypt.hash("password1234", 10);
-    for (const name of SAMPLE_NAMES) {
-      const email = `${name}@demo.local`.toLowerCase();
+    for (const { name, slug } of SAMPLE_NAMES) {
+      const email = `${slug}@demo.local`;
       await prisma.user.upsert({
         where: { email },
         update: {},

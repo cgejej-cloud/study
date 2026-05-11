@@ -54,3 +54,11 @@ prisma/*.db-journal
 # Environment
 .env
 .env.local
+
+# QA 자동화 산출물
+qa/shots/
+qa/report.html
+qa/scenarios.json
+qa/debug.mjs
+qa/check-*.mjs
+public/qa-report.html
