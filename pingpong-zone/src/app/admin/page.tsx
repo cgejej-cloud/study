@@ -89,7 +89,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex flex-wrap items-center gap-3 mb-4">
         <label className="font-semibold">날짜 조회</label>
         <input
           type="date"
@@ -98,6 +98,20 @@ export default function AdminPage() {
           className="border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500"
         />
         <span className="text-gray-500 text-sm">{filtered.length}건</span>
+        <a
+          href={`/api/admin/export/reservations?from=${filterDate}&to=${filterDate}`}
+          download
+          className="ml-auto text-xs font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition-colors"
+        >
+          이 날짜 CSV
+        </a>
+        <a
+          href="/api/admin/export/reservations"
+          download
+          className="text-xs font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition-colors"
+        >
+          전체 CSV
+        </a>
       </div>
 
       {loading ? (
