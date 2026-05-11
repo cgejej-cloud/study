@@ -51,10 +51,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
         </Providers>
         <footer className="border-t border-gray-200 bg-white mt-12">
-          <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
+          <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
             <span className="font-semibold text-gray-500">🏓 탁구존</span>
-            <span>서울특별시 강남구 테헤란로 123 · 02-1234-5678 · 매일 09:00~22:00</span>
-            <span>© 2025 탁구존</span>
+            <span className="text-center">서울특별시 강남구 테헤란로 123 · 02-1234-5678 · 매일 09:00~22:00</span>
+            <div className="flex items-center gap-3">
+              <a href="/privacy" className="hover:text-gray-600">개인정보</a>
+              <a href="/terms" className="hover:text-gray-600">이용약관</a>
+              <span>© 2025</span>
+            </div>
           </div>
         </footer>
       </body>
