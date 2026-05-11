@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Reservation = {
   id: string;
@@ -48,7 +49,12 @@ export default function MyPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">마이페이지</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">마이페이지</h1>
+        <Link href="/mypage/edit" className="text-sm text-green-700 hover:underline font-medium border border-green-700 px-3 py-1.5 rounded-lg">
+          내 정보 수정
+        </Link>
+      </div>
 
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-4">예정된 예약</h2>

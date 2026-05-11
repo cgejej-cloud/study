@@ -1,4 +1,5 @@
 import Link from "next/link";
+import TodayStatus from "@/components/TodayStatus";
 
 export default function HomePage() {
   return (
@@ -34,7 +35,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mt-12 bg-white rounded-xl shadow p-8">
+      <TodayStatus />
+
+      <section className="mt-8 bg-white rounded-xl shadow p-8">
         <h2 className="text-2xl font-bold mb-4">오시는 길</h2>
         <div className="text-gray-600 space-y-1">
           <p>📍 서울특별시 강남구 테헤란로 123, 탁구존 빌딩 2층</p>

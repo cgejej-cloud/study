@@ -24,6 +24,18 @@ model Table {
   description  String?
   isActive     Boolean       @default(true)
   reservations Reservation[]
+  blockedSlots BlockedSlot[]
+}
+
+model BlockedSlot {
+  id        String   @id @default(cuid())
+  tableId   String
+  date      String
+  startTime String
+  endTime   String
+  reason    String?
+  createdAt DateTime @default(now())
+  table     Table    @relation(fields: [tableId], references: [id])
 }
 
 model Reservation {

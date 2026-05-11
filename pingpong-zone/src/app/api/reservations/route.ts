@@ -37,21 +37,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "필수 항목을 입력해주세요." }, { status: 400 });
   }
 
+  const timeFilter = {
+    OR: [
+      { startTime: { lte: startTime }, endTime: { gt: startTime } },
+      { startTime: { lt: endTime }, endTime: { gte: endTime } },
+      { startTime: { gte: startTime }, endTime: { lte: endTime } },
+    ],
+  };
+
   const conflict = await prisma.reservation.findFirst({
-    where: {
-      tableId,
-      date,
-      status: "confirmed",
-      OR: [
-        { startTime: { lte: startTime }, endTime: { gt: startTime } },
-        { startTime: { lt: endTime }, endTime: { gte: endTime } },
-        { startTime: { gte: startTime }, endTime: { lte: endTime } },
-      ],
-    },
+    where: { tableId, date, status: "confirmed", ...timeFilter },
   });
 
   if (conflict) {
     return NextResponse.json({ error: "이미 예약된 시간대입니다." }, { status: 409 });
+  }
+
+  const blockedConflict = await prisma.blockedSlot.findFirst({
+    where: { tableId, date, ...timeFilter },
+  });
+
+  if (blockedConflict) {
+    return NextResponse.json({ error: `예약 불가 시간대입니다.${blockedConflict.reason ? ` (${blockedConflict.reason})` : ""}` }, { status: 409 });
   }
 
   const reservation = await prisma.reservation.create({

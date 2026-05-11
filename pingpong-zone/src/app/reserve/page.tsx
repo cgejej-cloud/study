@@ -8,13 +8,101 @@ const TIME_SLOTS = [
   "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00",
 ];
 
+const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
 type Table = { id: string; name: string; description: string };
 type Reservation = { tableId: string; date: string; startTime: string; endTime: string; status: string };
+type BlockedSlot = { tableId: string; date: string; startTime: string; endTime: string };
+
+function CalendarPicker({ selected, onChange, min }: {
+  selected: string;
+  onChange: (d: string) => void;
+  min: string;
+}) {
+  const todayDate = new Date();
+  const [view, setView] = useState(() => {
+    const d = selected ? new Date(selected + "T00:00:00") : new Date();
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+
+  const firstDay = new Date(view.year, view.month, 1).getDay();
+  const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
+  const monthStr = `${view.year}-${String(view.month + 1).padStart(2, "0")}`;
+  const todayStr = todayDate.toISOString().split("T")[0];
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  function prevMonth() {
+    setView(v => {
+      const d = new Date(v.year, v.month - 1, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+  }
+  function nextMonth() {
+    setView(v => {
+      const d = new Date(v.year, v.month + 1, 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+  }
+
+  return (
+    <div className="border rounded-xl p-4 bg-gray-50 w-fit">
+      <div className="flex items-center justify-between mb-3">
+        <button type="button" onClick={prevMonth} className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded-full text-gray-600 font-bold">‹</button>
+        <span className="font-semibold text-gray-800">{view.year}년 {view.month + 1}월</span>
+        <button type="button" onClick={nextMonth} className="w-8 h-8 flex items-center justify-center hover:bg-gray-200 rounded-full text-gray-600 font-bold">›</button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 mb-1">
+        {WEEK_DAYS.map((d, i) => (
+          <div key={d} className={`text-center text-xs font-semibold py-1 ${i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-gray-500"}`}>
+            {d}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((day, i) => {
+          if (!day) return <div key={`e-${i}`} />;
+          const dayStr = `${monthStr}-${String(day).padStart(2, "0")}`;
+          const isDisabled = dayStr < min;
+          const isSelected = dayStr === selected;
+          const isToday = dayStr === todayStr;
+          const dow = new Date(dayStr + "T00:00:00").getDay();
+          return (
+            <button
+              key={dayStr}
+              type="button"
+              disabled={isDisabled}
+              onClick={() => onChange(dayStr)}
+              className={`w-9 h-9 rounded-full text-sm font-medium transition ${
+                isSelected
+                  ? "bg-green-600 text-white shadow"
+                  : isDisabled
+                  ? "text-gray-300 cursor-not-allowed"
+                  : isToday
+                  ? "border-2 border-green-500 text-green-700 hover:bg-green-50"
+                  : dow === 0
+                  ? "text-red-500 hover:bg-red-50"
+                  : dow === 6
+                  ? "text-blue-500 hover:bg-blue-50"
+                  : "text-gray-700 hover:bg-green-100"
+              }`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function ReservePage() {
   const router = useRouter();
   const [tables, setTables] = useState<Table[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [blocked, setBlocked] = useState<BlockedSlot[]>([]);
   const [selectedTable, setSelectedTable] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
@@ -29,20 +117,27 @@ export default function ReservePage() {
 
   useEffect(() => {
     if (!selectedDate || !selectedTable) return;
-    fetch(`/api/reservations?date=${selectedDate}&tableId=${selectedTable}`)
+    fetch(`/api/availability?date=${selectedDate}`)
       .then((r) => r.json())
-      .then((data) => setReservations(Array.isArray(data) ? data : []));
+      .then((data: Array<{ id: string; bookedSlots: Array<{ startTime: string; endTime: string; type: string }> }>) => {
+        if (!Array.isArray(data)) return;
+        const tableData = data.find((t) => t.id === selectedTable);
+        if (!tableData) return;
+        const res: Reservation[] = tableData.bookedSlots
+          .filter((s) => s.type === "reserved")
+          .map((s) => ({ tableId: selectedTable, date: selectedDate, startTime: s.startTime, endTime: s.endTime, status: "confirmed" }));
+        const blk: BlockedSlot[] = tableData.bookedSlots
+          .filter((s) => s.type === "blocked")
+          .map((s) => ({ tableId: selectedTable, date: selectedDate, startTime: s.startTime, endTime: s.endTime }));
+        setReservations(res);
+        setBlocked(blk);
+      });
   }, [selectedDate, selectedTable]);
 
-  function isBooked(time: string) {
-    return reservations.some(
-      (r) =>
-        r.tableId === selectedTable &&
-        r.date === selectedDate &&
-        r.status === "confirmed" &&
-        r.startTime <= time &&
-        r.endTime > time
-    );
+  function getSlotStatus(time: string): "reserved" | "blocked" | "available" {
+    if (reservations.some((r) => r.startTime <= time && r.endTime > time)) return "reserved";
+    if (blocked.some((b) => b.startTime <= time && b.endTime > time)) return "blocked";
+    return "available";
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -56,12 +151,7 @@ export default function ReservePage() {
     const res = await fetch("/api/reservations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tableId: selectedTable,
-        date: selectedDate,
-        startTime: selectedTime,
-        endTime,
-      }),
+      body: JSON.stringify({ tableId: selectedTable, date: selectedDate, startTime: selectedTime, endTime }),
     });
 
     setLoading(false);
@@ -77,12 +167,7 @@ export default function ReservePage() {
       return;
     }
 
-    setMessage("✅ 예약이 완료되었습니다!");
-    setSelectedTime("");
-    // 예약 목록 새로고침
-    fetch(`/api/reservations?date=${selectedDate}&tableId=${selectedTable}`)
-      .then((r) => r.json())
-      .then((d) => setReservations(Array.isArray(d) ? d : []));
+    router.push(`/reserve/confirm/${data.id}`);
   }
 
   return (
@@ -90,7 +175,6 @@ export default function ReservePage() {
       <h1 className="text-3xl font-bold mb-8">예약하기</h1>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6 space-y-6">
-        {/* 탁구대 선택 */}
         <div>
           <label className="block font-semibold mb-2">탁구대 선택</label>
           <div className="grid grid-cols-2 gap-3">
@@ -112,51 +196,54 @@ export default function ReservePage() {
           </div>
         </div>
 
-        {/* 날짜 선택 */}
         <div>
           <label className="block font-semibold mb-2">날짜 선택</label>
-          <input
-            type="date"
+          <CalendarPicker
+            selected={selectedDate}
+            onChange={(d) => { setSelectedDate(d); setSelectedTime(""); }}
             min={today}
-            value={selectedDate}
-            onChange={(e) => { setSelectedDate(e.target.value); setSelectedTime(""); }}
-            className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
 
-        {/* 시간 선택 */}
         {selectedTable && selectedDate && (
           <div>
             <label className="block font-semibold mb-2">시간 선택 (1시간 단위)</label>
             <div className="grid grid-cols-4 gap-2">
               {TIME_SLOTS.map((time) => {
-                const booked = isBooked(time);
+                const status = getSlotStatus(time);
                 return (
                   <button
                     key={time}
                     type="button"
-                    disabled={booked}
+                    disabled={status !== "available"}
                     onClick={() => setSelectedTime(time)}
                     className={`py-2 rounded-lg text-sm font-medium transition ${
-                      booked
+                      status === "reserved"
+                        ? "bg-red-100 text-red-400 cursor-not-allowed"
+                        : status === "blocked"
                         ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                         : selectedTime === time
                         ? "bg-green-600 text-white"
                         : "bg-gray-100 hover:bg-green-100"
                     }`}
                   >
-                    {booked ? `${time} 마감` : time}
+                    {time}
+                    {status === "reserved" && <div className="text-xs">예약됨</div>}
+                    {status === "blocked" && <div className="text-xs">불가</div>}
                   </button>
                 );
               })}
+            </div>
+            <div className="flex gap-4 mt-2 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block border" /> 예약가능</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 inline-block" /> 예약됨</span>
+              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-200 inline-block" /> 이용불가</span>
             </div>
           </div>
         )}
 
         {message && (
-          <p className={`text-sm font-medium ${message.startsWith("✅") ? "text-green-600" : "text-red-500"}`}>
-            {message}
-          </p>
+          <p className="text-sm font-medium text-red-500">{message}</p>
         )}
 
         <button
