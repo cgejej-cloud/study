@@ -28,6 +28,7 @@ export async function sendUpcomingReservationReminders() {
         user:  { select: { name: true, email: true, emailNotify: true } },
         table: { select: { name: true } },
       },
+      take: 50, // 단일 실행 당 최대 50건 (SMTP 폭주 방지)
     });
 
     const upcoming = candidates.filter((r) => {
