@@ -113,23 +113,32 @@ export default function RankingPage() {
 
       {/* 시즌 탭 */}
       {activeSeason && (
-        <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1 flex gap-1">
-          <button
-            onClick={() => setTab("overall")}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              tab === "overall" ? "bg-green-700 text-white" : "text-gray-600 hover:bg-gray-50"
-            }`}
+        <div className="flex items-center gap-2">
+          <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1 flex gap-1 flex-1">
+            <button
+              onClick={() => setTab("overall")}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                tab === "overall" ? "bg-green-700 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              전체 랭킹
+            </button>
+            <button
+              onClick={() => setTab("season")}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                tab === "season" ? "bg-green-700 text-white" : "text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              🏆 {activeSeason.name}
+            </button>
+          </div>
+          <Link
+            href="/seasons"
+            className="text-xs font-medium text-gray-500 hover:text-gray-700 border border-gray-200 hover:bg-gray-50 px-3 py-2 rounded-xl shadow-sm bg-white whitespace-nowrap"
+            title="시즌 아카이브"
           >
-            전체 랭킹
-          </button>
-          <button
-            onClick={() => setTab("season")}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              tab === "season" ? "bg-green-700 text-white" : "text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            🏆 {activeSeason.name}
-          </button>
+            전체 시즌
+          </Link>
         </div>
       )}
 
