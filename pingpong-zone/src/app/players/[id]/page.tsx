@@ -17,7 +17,10 @@ type Player = {
     winRate: number | null;
     isPlacing: boolean;
     placementLeft: number;
+    streak: { type: "W" | "L"; count: number } | null;
+    recentForm: ("W" | "L")[];
   };
+  headToHead: null | { vsId: string; vsName: string; wins: number; losses: number };
   recentMatches: Array<{
     id: string;
     opponentId: string;
@@ -96,10 +99,32 @@ export default function PlayerProfilePage() {
             {player.stats.isPlacing && (
               <span className="ml-2 text-xs bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">🔰 신입 보정</span>
             )}
+            {player.stats.streak && player.stats.streak.count >= 3 && (
+              <span className={`ml-2 text-xs font-bold px-1.5 py-0.5 rounded-full ${
+                player.stats.streak.type === "W" ? "bg-orange-100 text-orange-600" : "bg-gray-100 text-gray-500"
+              }`}>
+                {player.stats.streak.type === "W" ? "🔥" : "❄️"} {player.stats.streak.count}{player.stats.streak.type === "W" ? "연승" : "연패"}
+              </span>
+            )}
           </p>
           <p className="text-xs text-gray-400 mt-1">
             가입일 · {new Date(player.joinedAt).toLocaleDateString("ko-KR")}
           </p>
+          {player.stats.recentForm.length > 0 && (
+            <div className="flex gap-1 mt-2" aria-label="최근 폼">
+              {player.stats.recentForm.map((f, i) => (
+                <span
+                  key={i}
+                  className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center ${
+                    f === "W" ? "bg-blue-100 text-blue-700" : "bg-red-100 text-red-600"
+                  }`}
+                  title={f === "W" ? "승" : "패"}
+                >
+                  {f}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -116,6 +141,26 @@ export default function PlayerProfilePage() {
           </div>
         ))}
       </div>
+
+      {/* 헤드투헤드 */}
+      {player.headToHead && (player.headToHead.wins + player.headToHead.losses > 0) && (
+        <div className="bg-gradient-to-r from-blue-50 to-red-50 border border-gray-100 rounded-xl p-4 shadow-sm">
+          <p className="text-xs font-semibold text-gray-600 mb-2 text-center">⚔️ 나와의 상대 전적</p>
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-center">
+              <div className="text-xs text-gray-500">{player.headToHead.vsName} (나)</div>
+              <div className="text-2xl font-bold text-blue-600">{player.headToHead.wins}</div>
+              <div className="text-xs text-gray-400">승</div>
+            </div>
+            <div className="text-gray-300 text-xl font-light">vs</div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500">{player.name}</div>
+              <div className="text-2xl font-bold text-red-500">{player.headToHead.losses}</div>
+              <div className="text-xs text-gray-400">승</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {player.stats.winRate !== null && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">

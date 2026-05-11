@@ -112,8 +112,15 @@ export default function MatchHistoryPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/mypage" className="text-gray-400 hover:text-gray-600 text-lg">←</Link>
+        <Link href="/mypage" className="text-gray-400 hover:text-gray-600 text-lg" aria-label="마이페이지로 돌아가기">←</Link>
         <h1 className="text-2xl font-bold text-gray-900">경기 전적</h1>
+        <a
+          href="/api/me/matches/export"
+          className="ml-auto text-xs font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition-colors"
+          download
+        >
+          CSV 다운로드
+        </a>
       </div>
 
       {/* 요약 */}

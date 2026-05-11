@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/session";
 
 const PLACEMENT_GAMES = 5;
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const session = await getSession();
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -48,6 +50,36 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const totalAll = total;
     const winsAll = [...user.matchesAsPlayer1, ...user.matchesAsPlayer2].filter((m) => m.winnerId === user.id).length;
 
+    // 최근 10경기 폼 (W/L 배열)
+    const form = matches.slice(0, 10).map((m) => (m.won ? "W" : "L"));
+
+    // 연승/연패
+    let streak = 0;
+    let streakType: "W" | "L" | null = null;
+    for (const m of matches) {
+      const t = m.won ? "W" : "L";
+      if (streakType === null) { streakType = t as "W" | "L"; streak = 1; continue; }
+      if (streakType === t) streak++;
+      else break;
+    }
+
+    // 헤드투헤드 (현재 로그인 사용자가 본인이 아닐 때만 의미 있음)
+    let headToHead = null as null | { vsId: string; vsName: string; wins: number; losses: number };
+    if (session && session.id !== user.id) {
+      const h2h = await prisma.match.findMany({
+        where: {
+          status: "confirmed",
+          OR: [
+            { player1Id: session.id, player2Id: user.id },
+            { player1Id: user.id, player2Id: session.id },
+          ],
+        },
+        select: { winnerId: true },
+      });
+      const myWins = h2h.filter((m) => m.winnerId === session.id).length;
+      headToHead = { vsId: session.id, vsName: session.name, wins: myWins, losses: h2h.length - myWins };
+    }
+
     return NextResponse.json({
       id: user.id,
       name: user.name,
@@ -60,8 +92,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
         winRate: totalAll > 0 ? Math.round((winsAll / totalAll) * 100) : null,
         isPlacing: totalAll < PLACEMENT_GAMES,
         placementLeft: totalAll < PLACEMENT_GAMES ? PLACEMENT_GAMES - totalAll : 0,
+        streak: streakType ? { type: streakType, count: streak } : null,
+        recentForm: form,
       },
       recentMatches: matches,
+      headToHead,
       _recentWins: wins,
     });
   } catch (e) {
