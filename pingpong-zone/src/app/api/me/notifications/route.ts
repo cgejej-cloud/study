@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { sendUpcomingReservationReminders } from "@/lib/reminders";
 
 export async function GET() {
+  // 종 아이콘 폴링 (1분마다) - lazy-cron 리마인더 트리거에 활용
+  sendUpcomingReservationReminders().catch(() => {});
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
