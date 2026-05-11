@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { calculateBadges } from "@/lib/badges";
 
 const PLACEMENT_GAMES = 5;
 
@@ -63,6 +64,25 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       else break;
     }
 
+    // 역대 최장 연승 계산 (모든 매치 기준)
+    let bestStreak = 0;
+    let cur = 0;
+    for (const m of [...matches].reverse()) {
+      if (m.won) { cur++; if (cur > bestStreak) bestStreak = cur; }
+      else cur = 0;
+    }
+
+    // 업적 계산
+    const badges = calculateBadges({
+      total: totalAll,
+      wins: winsAll,
+      losses: totalAll - winsAll,
+      winRate: totalAll > 0 ? Math.round((winsAll / totalAll) * 100) : null,
+      eloRating: user.eloRating,
+      bestStreak,
+      recentForm: form,
+    });
+
     // 헤드투헤드 (현재 로그인 사용자가 본인이 아닐 때만 의미 있음)
     let headToHead = null as null | { vsId: string; vsName: string; wins: number; losses: number };
     if (session && session.id !== user.id) {
@@ -97,6 +117,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       },
       recentMatches: matches,
       headToHead,
+      badges,
       _recentWins: wins,
     });
   } catch (e) {

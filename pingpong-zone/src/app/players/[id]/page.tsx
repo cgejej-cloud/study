@@ -21,6 +21,14 @@ type Player = {
     recentForm: ("W" | "L")[];
   };
   headToHead: null | { vsId: string; vsName: string; wins: number; losses: number };
+  badges: Array<{
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    earned: boolean;
+    progress?: { current: number; target: number };
+  }>;
   recentMatches: Array<{
     id: string;
     opponentId: string;
@@ -170,6 +178,36 @@ export default function PlayerProfilePage() {
           </div>
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div className="h-full bg-green-500 rounded-full" style={{ width: `${player.stats.winRate}%` }} />
+          </div>
+        </div>
+      )}
+
+      {/* 업적 */}
+      {player.badges && player.badges.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-700">🏅 업적</h2>
+            <span className="text-xs text-gray-400">
+              {player.badges.filter(b => b.earned).length} / {player.badges.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+            {player.badges.map((b) => (
+              <div
+                key={b.id}
+                title={`${b.name}\n${b.description}${b.progress ? ` (${b.progress.current}/${b.progress.target})` : ""}`}
+                className={`aspect-square rounded-xl flex flex-col items-center justify-center text-center p-1.5 transition-opacity ${
+                  b.earned
+                    ? "bg-gradient-to-br from-amber-50 to-yellow-100 border border-amber-200"
+                    : "bg-gray-50 border border-gray-100 opacity-40"
+                }`}
+              >
+                <div className="text-xl sm:text-2xl">{b.icon}</div>
+                <div className={`text-[9px] sm:text-[10px] font-semibold mt-0.5 leading-tight ${b.earned ? "text-amber-800" : "text-gray-400"}`}>
+                  {b.name}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
