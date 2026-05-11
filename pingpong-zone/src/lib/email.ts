@@ -24,6 +24,18 @@ export async function sendEmail(to: string, subject: string, html: string) {
   await transporter.sendMail({ from: FROM, to, subject, html });
 }
 
+// 사용자 알림 옵션을 존중하는 헬퍼 - 호출처가 깜빡할 수 없도록 단일 경로 제공
+export async function sendEmailIfEnabled(
+  user: { email: string | null; emailNotify: boolean } | null | undefined,
+  subject: string,
+  html: string,
+) {
+  if (!user?.email || !user.emailNotify) return;
+  await sendEmail(user.email, subject, html).catch((e) => {
+    console.error("[Email 전송 실패]", e);
+  });
+}
+
 export async function sendReservationConfirm(opts: {
   to: string;
   name: string;

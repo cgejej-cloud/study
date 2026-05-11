@@ -47,6 +47,7 @@ export default function Header() {
     return (
       <Link
         href={href}
+        aria-current={active ? "page" : undefined}
         className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
           active
             ? "bg-white/20 text-white"
@@ -79,6 +80,7 @@ export default function Header() {
               <NotificationBell />
               <Link
                 href="/mypage"
+                aria-current={pathname.startsWith("/mypage") ? "page" : undefined}
                 className={`relative text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
                   pathname.startsWith("/mypage")
                     ? "bg-white/20 text-white"
@@ -96,6 +98,7 @@ export default function Header() {
               {session.role === "admin" && (
                 <Link
                   href="/admin"
+                  aria-current={pathname.startsWith("/admin") ? "page" : undefined}
                   className={`relative text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
                     pathname.startsWith("/admin")
                       ? "bg-white/20 text-white"

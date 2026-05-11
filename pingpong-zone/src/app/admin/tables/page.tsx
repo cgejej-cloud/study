@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 
 const TIME_SLOTS = [
   "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
@@ -29,6 +30,7 @@ type BlockedSlot = {
 
 export default function AdminTablesPage() {
   const router = useRouter();
+  const toast = useToast();
   const [tables, setTables] = useState<Table[]>([]);
   const [blocked, setBlocked] = useState<BlockedSlot[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -72,6 +74,10 @@ export default function AdminTablesPage() {
       const updated = await res.json();
       setTables((prev) => prev.map((t) => t.id === id ? { ...t, ...updated } : t));
       setEditing(null);
+      toast.show("탁구대 정보를 수정했습니다.", "success");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast.show(data.error || "수정에 실패했습니다.", "error");
     }
   }
 
@@ -83,13 +89,20 @@ export default function AdminTablesPage() {
     });
     if (res.ok) {
       setTables((prev) => prev.map((t) => t.id === table.id ? { ...t, isActive: !t.isActive } : t));
+      toast.show(`${table.name} ${!table.isActive ? "활성화" : "비활성화"}했습니다.`, "success");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast.show(data.error || "변경에 실패했습니다.", "error");
     }
   }
 
   async function addBlock(e: React.FormEvent) {
     e.preventDefault();
     if (!blockTableId || !blockDate || !blockStart || !blockEnd) return;
-    if (blockStart >= blockEnd) { alert("종료 시간이 시작 시간보다 커야 합니다."); return; }
+    if (blockStart >= blockEnd) {
+      toast.show("종료 시간이 시작 시간보다 커야 합니다.", "error");
+      return;
+    }
     const res = await fetch("/api/admin/blocked", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -101,13 +114,23 @@ export default function AdminTablesPage() {
       setBlockStart("");
       setBlockEnd("");
       setBlockReason("");
+      toast.show("차단 시간을 추가했습니다.", "success");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast.show(data.error || "추가에 실패했습니다.", "error");
     }
   }
 
   async function removeBlock(id: string) {
     if (!confirm("차단을 해제하시겠습니까?")) return;
     const res = await fetch(`/api/admin/blocked/${id}`, { method: "DELETE" });
-    if (res.ok) setBlocked((prev) => prev.filter((b) => b.id !== id));
+    if (res.ok) {
+      setBlocked((prev) => prev.filter((b) => b.id !== id));
+      toast.show("차단을 해제했습니다.", "success");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast.show(data.error || "해제에 실패했습니다.", "error");
+    }
   }
 
   const today = new Date().toISOString().split("T")[0];
@@ -258,7 +281,13 @@ export default function AdminTablesPage() {
                   <td className="px-4 py-3">{b.startTime} ~ {b.endTime}</td>
                   <td className="px-4 py-3 text-gray-500">{b.reason || "-"}</td>
                   <td className="px-4 py-3">
-                    <button onClick={() => removeBlock(b.id)} className="text-red-400 hover:underline text-xs">삭제</button>
+                    <button
+                      onClick={() => removeBlock(b.id)}
+                      aria-label={`${b.date} ${b.startTime}-${b.endTime} 차단 해제`}
+                      className="text-red-500 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-red-50 active:bg-red-100 transition-colors"
+                    >
+                      삭제
+                    </button>
                   </td>
                 </tr>
               ))}
