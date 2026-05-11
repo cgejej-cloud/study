@@ -43,7 +43,17 @@ export default function ActivityFeed() {
       </section>
     );
   }
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return (
+      <section className="bg-white border border-gray-100 rounded-xl shadow-sm p-6 text-center">
+        <h2 className="text-lg font-bold text-gray-900 mb-2">⚡ 최근 경기</h2>
+        <p className="text-sm text-gray-500">아직 기록된 경기가 없습니다.</p>
+        <Link href="/ranking/record" className="inline-block mt-3 text-sm font-semibold text-green-700 hover:underline">
+          첫 경기 기록하러 가기 →
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-white border border-gray-100 rounded-xl shadow-sm p-6">
