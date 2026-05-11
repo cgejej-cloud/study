@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "git -C /home/user/study config credential.helper store && echo \"https://cgejej-cloud:${GITHUB_TOKEN}@github.com\" > ~/.git-credentials"
+          }
+        ]
+      }
+    ]
+  }
+}
