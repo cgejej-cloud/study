@@ -138,7 +138,7 @@ export default function MyPage() {
                         </span>
                         {myEloChange !== null && (
                           <span className={`ml-2 text-xs font-medium ${myEloChange >= 0 ? "text-green-600" : "text-red-500"}`}>
-                            (예상 ELO {myEloChange >= 0 ? "+" : ""}{myEloChange})
+                            (예상 포인트 {myEloChange >= 0 ? "+" : ""}{myEloChange})
                           </span>
                         )}
                       </p>
@@ -164,7 +164,7 @@ export default function MyPage() {
             })}
           </div>
           <p className="text-xs text-gray-400 mt-2 px-1">
-            ※ 이의제기 시 관리자가 해당 경기를 검토합니다. ELO는 적용되지 않습니다.
+            ※ 이의제기 시 관리자가 해당 경기를 검토합니다. 포인트는 적용되지 않습니다.
           </p>
         </section>
       )}

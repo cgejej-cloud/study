@@ -62,7 +62,7 @@ export default function RankingPage() {
           <div key={t.name} className={`${t.bg} rounded-xl p-2.5 text-center`}>
             <div className="text-xl">{t.icon}</div>
             <div className={`text-xs font-bold mt-0.5 ${t.color} leading-tight`}>{t.name}</div>
-            <div className="text-[10px] text-gray-400 mt-0.5">{t.minElo}+</div>
+            <div className="text-[10px] text-gray-400 mt-0.5">{t.minElo}점+</div>
           </div>
         ))}
       </div>
@@ -70,12 +70,12 @@ export default function RankingPage() {
       {/* 시스템 안내 */}
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-sm">
-          <p className="font-semibold text-amber-800 mb-0.5">⚡ 동적 K값</p>
-          <p className="text-amber-600 text-xs">배치(5경기 미만) K=48 · 일반 K=24</p>
+          <p className="font-semibold text-amber-800 mb-0.5">🔰 신입 보정</p>
+          <p className="text-amber-600 text-xs">처음 5경기는 포인트 변동이 2배 — 빠르게 내 실력대로 배치됩니다</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 text-sm">
           <p className="font-semibold text-blue-800 mb-0.5">🛡️ 공정성 보장</p>
-          <p className="text-blue-600 text-xs">경기 기록 시 상대방 확인 후 ELO 반영 · 이의제기 가능</p>
+          <p className="text-blue-600 text-xs">경기 기록 시 상대방 확인 후 포인트 반영 · 이의제기 가능</p>
         </div>
       </div>
 
@@ -91,14 +91,14 @@ export default function RankingPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  {["순위", "티어", "선수", "ELO", "승", "패", "승률"].map((h) => (
+                  {["순위", "티어", "선수", "포인트", "승", "패", "승률"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {placed.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">배치 완료된 선수가 없습니다</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">정식 랭킹에 등록된 선수가 없습니다</td></tr>
                 ) : placed.map((entry, i) => {
                   const tier = getTier(entry.eloRating);
                   const isMe = entry.id === myId;
@@ -115,7 +115,7 @@ export default function RankingPage() {
                         {entry.name}
                         {isMe && <span className="ml-2 text-xs text-green-600 font-normal">(나)</span>}
                       </td>
-                      <td className="px-4 py-3 font-bold text-gray-800">{entry.eloRating}</td>
+                      <td className="px-4 py-3 font-bold text-gray-800">{entry.eloRating}점</td>
                       <td className="px-4 py-3 text-blue-600 font-medium">{entry.wins}</td>
                       <td className="px-4 py-3 text-red-400 font-medium">{entry.losses}</td>
                       <td className="px-4 py-3">
@@ -138,14 +138,14 @@ export default function RankingPage() {
           {placing.length > 0 && (
             <div className="bg-white rounded-xl shadow overflow-hidden">
               <div className="px-4 py-3 bg-gray-50 border-b flex items-center gap-2">
-                <span className="font-bold text-gray-700">배치고사 중</span>
-                <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-semibold rounded-full">배치 중</span>
-                <span className="text-xs text-gray-400">{placing.length}명 · 5경기 완료 후 랭킹 반영</span>
+                <span className="font-bold text-gray-700">🔰 신입 보정 기간</span>
+                <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-semibold rounded-full">보정 중</span>
+                <span className="text-xs text-gray-400">{placing.length}명 · 5경기 완료 후 정식 랭킹 반영</span>
               </div>
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    {["선수", "진행", "승", "패", "현재 ELO"].map((h) => (
+                    {["선수", "진행", "승", "패", "현재 포인트"].map((h) => (
                       <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600">{h}</th>
                     ))}
                   </tr>
@@ -171,7 +171,7 @@ export default function RankingPage() {
                         </td>
                         <td className="px-4 py-3 text-blue-600">{entry.wins}</td>
                         <td className="px-4 py-3 text-red-400">{entry.losses}</td>
-                        <td className="px-4 py-3 font-medium text-gray-500">{entry.eloRating}</td>
+                        <td className="px-4 py-3 font-medium text-gray-500">{entry.eloRating}점</td>
                       </tr>
                     );
                   })}
