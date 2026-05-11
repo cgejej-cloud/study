@@ -269,7 +269,7 @@ function RecordMatchInner() {
             <label className="block font-semibold mb-3 text-sm">
               세트 수 <span className="text-xs text-gray-400 font-normal">(선택)</span>
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 mb-2">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">내 세트</label>
                 <input
@@ -294,6 +294,29 @@ function RecordMatchInner() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <span className="text-xs text-gray-500 self-center">빠른 입력:</span>
+              {[[3, 0], [3, 1], [3, 2]].map(([w, l]) => (
+                <button
+                  key={`${w}-${l}`}
+                  type="button"
+                  onClick={() => {
+                    if (iWon) { setMyScore(w); setOpponentScore(l); }
+                    else      { setMyScore(l); setOpponentScore(w); }
+                  }}
+                  className="text-xs font-mono border border-gray-200 hover:border-green-400 hover:bg-green-50 px-2.5 py-1 rounded-md text-gray-600 transition-colors"
+                >
+                  {iWon ? `${w}-${l}` : `${l}-${w}`}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => { setMyScore(""); setOpponentScore(""); }}
+                className="text-xs text-gray-400 hover:text-gray-600 px-2.5 py-1"
+              >
+                지우기
+              </button>
             </div>
           </div>
         )}
