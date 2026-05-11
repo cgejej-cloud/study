@@ -19,6 +19,7 @@ type Player = {
     placementLeft: number;
     streak: { type: "W" | "L"; count: number } | null;
     recentForm: ("W" | "L")[];
+    avgSetDiff: number | null;
   };
   headToHead: null | { vsId: string; vsName: string; wins: number; losses: number };
   badges: Array<{
@@ -183,14 +184,24 @@ export default function PlayerProfilePage() {
       )}
 
       {player.stats.winRate !== null && (
-        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-semibold text-gray-700">승률</span>
-            <span className="font-bold text-green-700">{player.stats.winRate}%</span>
+        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3">
+          <div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="font-semibold text-gray-700">승률</span>
+              <span className="font-bold text-green-700">{player.stats.winRate}%</span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-green-500 rounded-full" style={{ width: `${player.stats.winRate}%` }} />
+            </div>
           </div>
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-green-500 rounded-full" style={{ width: `${player.stats.winRate}%` }} />
-          </div>
+          {player.stats.avgSetDiff !== null && (
+            <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-100">
+              <span className="text-gray-600">평균 세트 차이 (지배력)</span>
+              <span className={`font-bold ${player.stats.avgSetDiff >= 0 ? "text-blue-600" : "text-red-500"}`}>
+                {player.stats.avgSetDiff >= 0 ? "+" : ""}{player.stats.avgSetDiff}
+              </span>
+            </div>
+          )}
         </div>
       )}
 

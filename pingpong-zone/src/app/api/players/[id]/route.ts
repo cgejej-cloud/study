@@ -80,6 +80,12 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       else cur = 0;
     }
 
+    // 점수 입력된 경기에서 평균 세트 차이 (지배력 지표)
+    const scoredMatches = matches.filter((m) => m.myScore !== null && m.oppScore !== null);
+    const avgSetDiff = scoredMatches.length > 0
+      ? Math.round((scoredMatches.reduce((sum, m) => sum + ((m.myScore ?? 0) - (m.oppScore ?? 0)), 0) / scoredMatches.length) * 10) / 10
+      : null;
+
     // 업적 계산
     const badges = calculateBadges({
       total: totalAll,
@@ -122,6 +128,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
         placementLeft: totalAll < PLACEMENT_GAMES ? PLACEMENT_GAMES - totalAll : 0,
         streak: streakType ? { type: streakType, count: streak } : null,
         recentForm: form,
+        avgSetDiff,
       },
       recentMatches: matches,
       headToHead,
