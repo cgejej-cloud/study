@@ -260,12 +260,17 @@ export default function AdminTablesPage() {
         </form>
       </div>
 
-      {blocked.length > 0 && (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="px-5 py-4 border-b">
+      {(() => {
+        const today2 = new Date().toISOString().split("T")[0];
+        const upcoming = blocked.filter((b) => b.date >= today2);
+        if (upcoming.length === 0) return null;
+        return (
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <div className="px-5 py-4 border-b flex items-center justify-between">
             <h2 className="font-bold text-lg">등록된 이용 불가 시간대</h2>
+            <span className="text-xs text-gray-400">{upcoming.length}건 (과거 자동 숨김)</span>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[560px]">
             <thead className="bg-gray-50">
               <tr>
                 {["탁구대", "날짜", "시간", "사유", ""].map((h) => (
@@ -274,7 +279,7 @@ export default function AdminTablesPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {blocked.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)).map((b) => (
+              {upcoming.sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime)).map((b) => (
                 <tr key={b.id}>
                   <td className="px-4 py-3 font-medium">{b.table.name}</td>
                   <td className="px-4 py-3">{b.date}</td>
@@ -294,7 +299,8 @@ export default function AdminTablesPage() {
             </tbody>
           </table>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

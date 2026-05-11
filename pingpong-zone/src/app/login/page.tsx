@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { login } from "@/app/actions";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const params = useSearchParams();
+  const next = params.get("next") || "/";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -14,12 +16,15 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await login(new FormData(e.currentTarget));
+    const fd = new FormData(e.currentTarget);
+    // next 가 외부 URL 이 아닌지 안전하게 검증
+    const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+    const result = await login(fd);
     setLoading(false);
     if (result?.error) {
       setError(result.error);
     } else {
-      router.push("/");
+      router.push(safeNext);
       router.refresh();
     }
   }
@@ -84,5 +89,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="max-w-sm mx-auto mt-8 text-center text-gray-400">불러오는 중...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
