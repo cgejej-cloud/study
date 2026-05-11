@@ -72,13 +72,28 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
-  const { opponentId, iWon } = await req.json();
+  const { opponentId, iWon, myScore, opponentScore } = await req.json();
 
   if (!opponentId || iWon === undefined) {
     return NextResponse.json({ error: "필수 항목을 입력해주세요." }, { status: 400 });
   }
   if (opponentId === session.id) {
     return NextResponse.json({ error: "자기 자신과의 경기는 기록할 수 없습니다." }, { status: 400 });
+  }
+
+  // 점수는 선택 입력 — 입력 시 0~7 정수, 승자가 더 높아야 함
+  let p1Score: number | null = null;
+  let p2Score: number | null = null;
+  if (myScore !== undefined && opponentScore !== undefined && myScore !== null && opponentScore !== null) {
+    const a = Number(myScore), b = Number(opponentScore);
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0 || a > 7 || b > 7) {
+      return NextResponse.json({ error: "세트 수는 0~7 사이의 정수여야 합니다." }, { status: 400 });
+    }
+    if ((iWon && a <= b) || (!iWon && b <= a)) {
+      return NextResponse.json({ error: "승자의 세트 수가 더 높아야 합니다." }, { status: 400 });
+    }
+    p1Score = a;
+    p2Score = b;
   }
 
   const now = new Date();
@@ -175,6 +190,8 @@ export async function POST(req: NextRequest) {
       player2Id:   opponent.id,
       winnerId,
       status:      "pending",
+      p1Score,
+      p2Score,
       p1EloChange,
       p2EloChange,
     },

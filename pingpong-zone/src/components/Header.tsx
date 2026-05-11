@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { SessionPayload } from "@/lib/session";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Header() {
   const pathname = usePathname();
@@ -73,6 +74,7 @@ export default function Header() {
             <span className="w-6 h-6 rounded-full bg-green-600 animate-pulse ml-2" />
           ) : session ? (
             <>
+              <NotificationBell />
               <Link
                 href="/mypage"
                 className={`relative text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${

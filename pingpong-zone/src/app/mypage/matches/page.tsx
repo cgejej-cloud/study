@@ -10,6 +10,8 @@ type Match = {
   confirmedAt: string | null;
   status: string;
   winnerId: string;
+  p1Score: number | null;
+  p2Score: number | null;
   p1EloChange: number | null;
   p2EloChange: number | null;
   player1: { id: string; name: string };
@@ -196,8 +198,11 @@ export default function MatchHistoryPage() {
           <div className="divide-y">
             {matches.map((m) => {
               const iWon = m.winnerId === myId;
-              const opponent = m.player1.id === myId ? m.player2 : m.player1;
-              const myChange = m.player1.id === myId ? m.p1EloChange : m.p2EloChange;
+              const iAmP1 = m.player1.id === myId;
+              const opponent = iAmP1 ? m.player2 : m.player1;
+              const myChange = iAmP1 ? m.p1EloChange : m.p2EloChange;
+              const myScore  = iAmP1 ? m.p1Score : m.p2Score;
+              const oppScore = iAmP1 ? m.p2Score : m.p1Score;
               return (
                 <div key={m.id} className="px-4 py-3 flex items-center gap-3">
                   <div className={`w-1.5 h-10 rounded-full shrink-0 ${
@@ -219,6 +224,11 @@ export default function MatchHistoryPage() {
                          m.status === "pending"   ? "대기" :
                          m.status === "disputed"  ? "이의" : m.status}
                       </span>
+                      {myScore !== null && oppScore !== null && (
+                        <span className="text-xs text-gray-500 font-mono">
+                          {myScore}-{oppScore}
+                        </span>
+                      )}
                       {m.season && <span className="text-xs text-gray-400">{m.season.name}</span>}
                     </div>
                     <div className="text-xs text-gray-400 mt-0.5">

@@ -50,6 +50,8 @@ export default function RecordMatchPage() {
   const [users, setUsers] = useState<RankEntry[]>([]);
   const [selectedOpponent, setSelectedOpponent] = useState<RankEntry | null>(null);
   const [iWon, setIWon] = useState<boolean | null>(null);
+  const [myScore, setMyScore] = useState<number | "">("");
+  const [opponentScore, setOpponentScore] = useState<number | "">("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<MatchResult | null>(null);
   const [search, setSearch] = useState("");
@@ -85,10 +87,15 @@ export default function RecordMatchPage() {
     setLoading(true);
     setError(null);
     try {
+      const body: Record<string, unknown> = { opponentId: selectedOpponent.id, iWon };
+      if (myScore !== "" && opponentScore !== "") {
+        body.myScore = myScore;
+        body.opponentScore = opponentScore;
+      }
       const res = await fetch("/api/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ opponentId: selectedOpponent.id, iWon }),
+        body: JSON.stringify(body),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -160,7 +167,7 @@ export default function RecordMatchPage() {
               랭킹 확인
             </Link>
             <button
-              onClick={() => { setResult(null); setSelectedOpponent(null); setIWon(null); }}
+              onClick={() => { setResult(null); setSelectedOpponent(null); setIWon(null); setMyScore(""); setOpponentScore(""); }}
               className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50"
             >
               추가 기록
@@ -254,6 +261,40 @@ export default function RecordMatchPage() {
               >
                 😢 패배
               </button>
+            </div>
+          </div>
+        )}
+
+        {selectedOpponent && iWon !== null && (
+          <div>
+            <label className="block font-semibold mb-3 text-sm">
+              세트 수 <span className="text-xs text-gray-400 font-normal">(선택)</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">내 세트</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={7}
+                  value={myScore}
+                  onChange={(e) => setMyScore(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="예: 3"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">{selectedOpponent.name} 세트</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={7}
+                  value={opponentScore}
+                  onChange={(e) => setOpponentScore(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="예: 1"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
             </div>
           </div>
         )}

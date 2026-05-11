@@ -76,6 +76,8 @@ model Match {
   player2Id   String
   winnerId    String
   status      String    @default("confirmed")
+  p1Score     Int?
+  p2Score     Int?
   p1EloChange Int?
   p2EloChange Int?
   confirmedAt DateTime?
