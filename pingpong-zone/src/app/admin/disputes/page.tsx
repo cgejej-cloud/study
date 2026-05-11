@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 
 type Match = {
   id: string;
@@ -17,31 +18,16 @@ type Match = {
 
 export default function DisputesPage() {
   const router = useRouter();
+  const toast = useToast();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
 
-  async function load() {
-    const res = await fetch("/api/matches?status=disputed");
-    if (res.status === 401 || res.status === 403) { router.push("/"); return; }
-    // Filter client-side from all matches
-    const all = await res.json();
-    // Actually we need a dedicated endpoint – fetch all matches for admin
-    setLoading(false);
-  }
-
   useEffect(() => {
-    // Fetch disputed matches via existing matches API + client filter
     (async () => {
-      const res = await fetch("/api/matches");
+      const res = await fetch("/api/admin/disputes");
       if (res.status === 401 || res.status === 403) { router.push("/"); return; }
-      // We'll use a separate approach: fetch directly
-      const [disputedRes] = await Promise.all([
-        fetch("/api/admin/disputes"),
-      ]);
-      if (disputedRes.ok) {
-        setMatches(await disputedRes.json());
-      }
+      if (res.ok) setMatches(await res.json());
       setLoading(false);
     })();
   }, [router]);
@@ -53,7 +39,13 @@ export default function DisputesPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
-    if (res.ok) setMatches((prev) => prev.filter((m) => m.id !== matchId));
+    if (res.ok) {
+      setMatches((prev) => prev.filter((m) => m.id !== matchId));
+      toast.show(action === "admin-confirm" ? "경기를 인정했습니다." : "경기를 무효 처리했습니다.", "success");
+    } else {
+      const d = await res.json().catch(() => ({}));
+      toast.show(d.error || "처리에 실패했습니다.", "error");
+    }
     setProcessing(null);
   }
 

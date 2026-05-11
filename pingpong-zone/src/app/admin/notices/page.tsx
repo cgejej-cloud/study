@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 
 type Notice = { id: string; title: string; content: string; isPinned: boolean; isActive: boolean; createdAt: string };
 
 export default function AdminNoticesPage() {
   const router = useRouter();
+  const toast = useToast();
   const [notices, setNotices] = useState<Notice[]>([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -35,7 +37,11 @@ export default function AdminNoticesPage() {
     if (res.ok) {
       setTitle(""); setContent(""); setIsPinned(false);
       setMsg("공지가 등록되었습니다.");
+      toast.show("공지가 등록되었습니다.", "success");
       load();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      toast.show(d.error || "등록에 실패했습니다.", "error");
     }
   }
 
@@ -50,8 +56,13 @@ export default function AdminNoticesPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("공지를 삭제하시겠습니까?")) return;
-    await fetch(`/api/admin/notices/${id}`, { method: "DELETE" });
-    load();
+    const res = await fetch(`/api/admin/notices/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      toast.show("공지를 삭제했습니다.", "success");
+      load();
+    } else {
+      toast.show("삭제에 실패했습니다.", "error");
+    }
   }
 
   return (

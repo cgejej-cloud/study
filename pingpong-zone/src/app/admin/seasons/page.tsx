@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 
 type Season = {
   id: string;
@@ -16,6 +17,7 @@ type Season = {
 
 export default function AdminSeasonsPage() {
   const router = useRouter();
+  const toast = useToast();
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
@@ -32,25 +34,37 @@ export default function AdminSeasonsPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/admin/seasons", {
+    const res = await fetch("/api/admin/seasons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, startDate }),
     });
     setLoading(false);
-    setName("");
-    load();
+    if (res.ok) {
+      setName("");
+      toast.show("시즌이 생성되었습니다.", "success");
+      load();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      toast.show(d.error || "생성에 실패했습니다.", "error");
+    }
   }
 
   async function handleAction(id: string, action: "activate" | "close") {
     const label = action === "activate" ? "시즌을 활성화" : "시즌을 종료(랭킹 스냅샷 저장)";
     if (!confirm(`${label}하시겠습니까?`)) return;
-    await fetch(`/api/admin/seasons/${id}`, {
+    const res = await fetch(`/api/admin/seasons/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
-    load();
+    if (res.ok) {
+      toast.show(action === "activate" ? "시즌을 활성화했습니다." : "시즌이 종료되었습니다.", "success");
+      load();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      toast.show(d.error || "처리에 실패했습니다.", "error");
+    }
   }
 
   return (
