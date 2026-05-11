@@ -105,8 +105,8 @@ export default function AdminPage() {
       ) : filtered.length === 0 ? (
         <p className="text-gray-400">해당 날짜 예약이 없습니다.</p>
       ) : (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead className="bg-gray-50">
               <tr>
                 {["탁구대", "시간", "회원명", "이메일", "연락처", "상태", ""].map((h) => (

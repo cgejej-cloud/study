@@ -53,15 +53,24 @@ export default function RecordMatchPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<MatchResult | null>(null);
   const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/me").then((r) => r.json()).then((d) => {
-      if (!d?.id) { router.push("/login"); return; }
-      setMyId(d.id);
-    });
-    fetch("/api/ranking").then((r) => r.json()).then((data) => {
-      if (Array.isArray(data)) setUsers(data);
-    });
+    let cancelled = false;
+    (async () => {
+      const [meRes, rankRes] = await Promise.all([
+        fetch("/api/me"),
+        fetch("/api/ranking"),
+      ]);
+      if (cancelled) return;
+      const me = await meRes.json().catch(() => null);
+      if (!me?.id) { router.push("/login"); return; }
+      const rank = await rankRes.json().catch(() => []);
+      if (cancelled) return;
+      setMyId(me.id);
+      if (Array.isArray(rank)) setUsers(rank);
+    })();
+    return () => { cancelled = true; };
   }, [router]);
 
   useEffect(() => {
@@ -74,13 +83,24 @@ export default function RecordMatchPage() {
   async function handleSubmit() {
     if (!selectedOpponent || iWon === null) return;
     setLoading(true);
-    const res = await fetch("/api/matches", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ opponentId: selectedOpponent.id, iWon }),
-    });
-    setLoading(false);
-    if (res.ok) setResult(await res.json());
+    setError(null);
+    try {
+      const res = await fetch("/api/matches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opponentId: selectedOpponent.id, iWon }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "경기 기록에 실패했습니다.");
+        return;
+      }
+      setResult(data);
+    } catch {
+      setError("네트워크 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (result) {
@@ -258,6 +278,12 @@ export default function RecordMatchPage() {
             {selectedOpponent.isPlacing && (
               <div className="text-xs text-orange-500">상대는 신입 보정 기간 중 (포인트 변동 2배)</div>
             )}
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600">
+            {error}
           </div>
         )}
 

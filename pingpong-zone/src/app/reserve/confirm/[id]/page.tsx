@@ -20,20 +20,40 @@ export default function ReserveConfirmPage() {
   const id = params.id as string;
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/reservations/${id}`)
-      .then((r) => {
-        if (r.status === 401) { router.push("/login"); return null; }
-        return r.json();
-      })
-      .then((data) => {
-        if (data) { setReservation(data); setLoading(false); }
-      });
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/reservations/${id}`);
+        if (cancelled) return;
+        if (res.status === 401) { router.push("/login"); return; }
+        if (res.status === 404) { setError("예약 정보를 찾을 수 없습니다."); return; }
+        if (!res.ok) { setError("예약 정보를 불러오지 못했습니다."); return; }
+        const data = await res.json();
+        if (!cancelled) setReservation(data);
+      } catch {
+        if (!cancelled) setError("네트워크 오류가 발생했습니다.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [id, router]);
 
-  if (loading) return <div className="text-center py-20 text-gray-400">불러오는 중...</div>;
-  if (!reservation) return <div className="text-center py-20 text-gray-400">예약 정보를 찾을 수 없습니다.</div>;
+  if (loading) return <div className="text-center py-20 text-gray-400 text-sm">불러오는 중...</div>;
+  if (error || !reservation) {
+    return (
+      <div className="max-w-md mx-auto py-16 text-center space-y-4">
+        <div className="text-4xl">📭</div>
+        <p className="text-gray-500 text-sm">{error ?? "예약 정보를 찾을 수 없습니다."}</p>
+        <Link href="/mypage" className="inline-block bg-green-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-green-600">
+          내 예약으로 돌아가기
+        </Link>
+      </div>
+    );
+  }
 
   const dateObj = new Date(reservation.date + "T00:00:00");
   const weekDays = ["일", "월", "화", "수", "목", "금", "토"];
