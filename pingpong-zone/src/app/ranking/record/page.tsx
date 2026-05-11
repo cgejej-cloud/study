@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const PLACEMENT_GAMES = 5;
-const K_PLACEMENT = 48;
-const K_NORMAL = 24;
+import { PLACEMENT_GAMES, getK, expectedScore as expScore, calcEloChange as clientCalcEloChange } from "@/lib/elo";
 
 type RankEntry = {
   id: string;
@@ -38,9 +36,7 @@ function getTierIcon(elo: number) {
 }
 
 function calcEloChange(myElo: number, oppElo: number, myGames: number, iWon: boolean) {
-  const k = myGames < PLACEMENT_GAMES ? K_PLACEMENT : K_NORMAL;
-  const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
-  return Math.round(k * ((iWon ? 1 : 0) - expected));
+  return clientCalcEloChange(myElo, getK(myGames), expScore(myElo, oppElo), iWon ? 1 : 0);
 }
 
 export default function RecordMatchPage() {

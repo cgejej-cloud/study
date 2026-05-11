@@ -2,26 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { notifyOpponent, AUTO_CONFIRM_HOURS } from "@/lib/matchHelpers";
+import { PLACEMENT_GAMES, computeMatchEloChanges } from "@/lib/elo";
 
-const PLACEMENT_GAMES = 5;
-const K_PLACEMENT = 48;
-const K_NORMAL = 24;
 const DAILY_MATCH_LIMIT = 5;    // 하루 최대 경기 수
 const PAIR_DAILY_LIMIT = 1;     // 같은 상대와 하루 최대 경기 수
 const COOLDOWN_MINUTES = 30;    // 연속 경기 최소 간격 (분)
-// AUTO_CONFIRM_HOURS는 lib/matchHelpers.ts 에서 import
-
-function getK(totalGames: number) {
-  return totalGames < PLACEMENT_GAMES ? K_PLACEMENT : K_NORMAL;
-}
-
-function expectedScore(ratingA: number, ratingB: number) {
-  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
-}
-
-function calcEloChange(rating: number, k: number, expected: number, actual: number) {
-  return Math.round(k * (actual - expected));
-}
 
 async function getConfirmedGameCount(userId: string) {
   return prisma.match.count({
@@ -168,20 +153,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "사용자를 찾을 수 없습니다." }, { status: 404 });
   }
 
-  const winnerId     = iWon ? me.id : opponent.id;
-  const winnerRating = iWon ? me.eloRating : opponent.eloRating;
-  const loserRating  = iWon ? opponent.eloRating : me.eloRating;
-  const winnerGames  = iWon ? myGames : oppGames;
-  const loserGames   = iWon ? oppGames : myGames;
-  const winnerK      = getK(winnerGames);
-  const loserK       = getK(loserGames);
-  const expectedWin  = expectedScore(winnerRating, loserRating);
-  const winnerChange = calcEloChange(winnerRating, winnerK, expectedWin, 1);
-  const loserChange  = calcEloChange(loserRating, loserK, 1 - expectedWin, 0);
-
-  // player1 = 기록자(me), player2 = 상대(opponent)
-  const p1EloChange = iWon ? winnerChange : loserChange;
-  const p2EloChange = iWon ? loserChange  : winnerChange;
+  const winnerId = iWon ? me.id : opponent.id;
+  const { p1Change: p1EloChange, p2Change: p2EloChange } = computeMatchEloChanges({
+    myElo: me.eloRating,
+    oppElo: opponent.eloRating,
+    myGames,
+    oppGames,
+    iWon,
+  });
 
   // pending 상태로 생성 — ELO는 상대 확인 시 적용
   const match = await prisma.match.create({
