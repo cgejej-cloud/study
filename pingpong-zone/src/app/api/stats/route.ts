@@ -74,10 +74,28 @@ export async function GET() {
   }
   const dowStats = DOW_LABELS.map((label, i) => ({ label, count: dowCounts[i] }));
 
+  // 최근 14일 일별 예약 추이
+  const recent14Start = new Date(now); recent14Start.setDate(now.getDate() - 13);
+  recent14Start.setHours(0, 0, 0, 0);
+  const recent14Str = recent14Start.toISOString().split("T")[0];
+  const recentDays = await prisma.reservation.groupBy({
+    by: ["date"],
+    where: { status: "confirmed", date: { gte: recent14Str } },
+    _count: { _all: true },
+  });
+  const daysMap = new Map(recentDays.map((d) => [d.date, d._count._all]));
+  const trend: { date: string; count: number }[] = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(recent14Start); d.setDate(recent14Start.getDate() + i);
+    const ds = d.toISOString().split("T")[0];
+    trend.push({ date: ds, count: daysMap.get(ds) ?? 0 });
+  }
+
   return NextResponse.json({
     summary: { totalUsers, todayRes, weekRes, monthRes, totalMatches, disputedCount },
     hourStats: HOURS.map(h => ({ hour: `${h}시`, count: hourCounts[h] })),
     tableStats,
     dowStats,
+    trend,
   });
 }

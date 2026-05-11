@@ -1,10 +1,36 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
+import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "탁구존 — 스마트 탁구장 예약",
-  description: "탁구존 온라인 예약 및 랭킹 서비스",
+  title: {
+    default: "탁구존 — 스마트 탁구장 예약·랭킹",
+    template: "%s | 탁구존",
+  },
+  description: "온라인 예약, 실시간 현황, ELO 랭킹 시스템 - 탁구존에서 더 즐거운 탁구를 즐기세요.",
+  keywords: ["탁구", "탁구장 예약", "탁구 랭킹", "ELO", "강남 탁구장"],
+  openGraph: {
+    title: "탁구존",
+    description: "스마트 탁구장 예약과 랭킹 시스템",
+    type: "website",
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary",
+    title: "탁구존",
+    description: "스마트 탁구장 예약과 랭킹 시스템",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#15803d",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -18,10 +44,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-        <Header />
-        <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 animate-fade-in">
-          {children}
-        </main>
+        <Providers>
+          <Header />
+          <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 animate-fade-in">
+            {children}
+          </main>
+        </Providers>
         <footer className="border-t border-gray-200 bg-white mt-12">
           <div className="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
             <span className="font-semibold text-gray-500">🏓 탁구존</span>

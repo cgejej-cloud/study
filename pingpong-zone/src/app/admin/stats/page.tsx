@@ -16,7 +16,33 @@ type Stats = {
   hourStats: { hour: string; count: number }[];
   tableStats: { name: string; count: number }[];
   dowStats: { label: string; count: number }[];
+  trend: { date: string; count: number }[];
 };
+
+function TrendChart({ data }: { data: { date: string; count: number }[] }) {
+  const max = Math.max(...data.map(d => d.count), 1);
+  return (
+    <div className="flex items-end gap-1 h-32">
+      {data.map((d) => {
+        const day = new Date(d.date + "T00:00:00");
+        const isToday = d.date === new Date().toISOString().split("T")[0];
+        return (
+          <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group">
+            <span className="text-[10px] text-gray-400 font-semibold">{d.count > 0 ? d.count : ""}</span>
+            <div
+              className={`w-full rounded-t transition-colors ${
+                isToday ? "bg-green-600" : "bg-green-300 group-hover:bg-green-400"
+              }`}
+              style={{ height: `${Math.max(2, (d.count / max) * 100)}%` }}
+              title={`${d.date}: ${d.count}건`}
+            />
+            <span className="text-[10px] text-gray-400">{day.getDate()}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function BarChart({ data, maxVal }: { data: { label: string; count: number }[]; maxVal: number }) {
   return (
@@ -80,6 +106,14 @@ export default function AdminStatsPage() {
           </div>
         ))}
       </div>
+
+      {/* 최근 14일 트렌드 */}
+      {stats.trend && stats.trend.length > 0 && (
+        <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">최근 14일 일별 예약</h2>
+          <TrendChart data={stats.trend} />
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         {/* 시간대별 예약 */}
