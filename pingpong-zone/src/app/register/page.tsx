@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -8,9 +8,33 @@ export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+
+  useEffect(() => {
+    const v = email.trim().toLowerCase();
+    if (!v) { setEmailStatus("idle"); return; }
+    setEmailStatus("checking");
+    const t = setTimeout(() => {
+      fetch(`/api/check-email?email=${encodeURIComponent(v)}`)
+        .then((r) => r.ok ? r.json() : { taken: null })
+        .then((d) => {
+          if (d.valid === false) setEmailStatus("invalid");
+          else if (d.taken === true) setEmailStatus("taken");
+          else if (d.taken === false) setEmailStatus("available");
+          else setEmailStatus("idle");
+        })
+        .catch(() => setEmailStatus("idle"));
+    }, 500);
+    return () => clearTimeout(t);
+  }, [email]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (emailStatus === "taken") {
+      setError("이미 사용 중인 이메일입니다. 다른 이메일을 입력해주세요.");
+      return;
+    }
     setError("");
     setLoading(true);
 
@@ -53,25 +77,46 @@ export default function RegisterPage() {
             { name: "email",    label: "이메일",  type: "email",    required: true,  placeholder: "email@example.com", autoComplete: "email",        hint: "" },
             { name: "password", label: "비밀번호", type: "password", required: true,  placeholder: "••••••••",       autoComplete: "new-password", hint: "8자 이상 입력해주세요" },
             { name: "phone",    label: "전화번호", type: "tel",      required: false, placeholder: "010-0000-0000",  autoComplete: "tel",          hint: "선택 사항입니다" },
-          ].map((field) => (
-            <div key={field.name}>
-              <label htmlFor={`reg-${field.name}`} className="block text-sm font-medium text-gray-700 mb-1.5">
-                {field.label}
-                {field.required && <span className="text-red-400 ml-1" aria-hidden="true">*</span>}
-              </label>
-              <input
-                id={`reg-${field.name}`}
-                name={field.name}
-                type={field.type}
-                required={field.required}
-                placeholder={field.placeholder}
-                autoComplete={field.autoComplete}
-                minLength={field.name === "password" ? 8 : undefined}
-                className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              {field.hint && <p className="text-xs text-gray-400 mt-1">{field.hint}</p>}
-            </div>
-          ))}
+          ].map((field) => {
+            const isEmail = field.name === "email";
+            return (
+              <div key={field.name}>
+                <label htmlFor={`reg-${field.name}`} className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {field.label}
+                  {field.required && <span className="text-red-400 ml-1" aria-hidden="true">*</span>}
+                </label>
+                <input
+                  id={`reg-${field.name}`}
+                  name={field.name}
+                  type={field.type}
+                  required={field.required}
+                  placeholder={field.placeholder}
+                  autoComplete={field.autoComplete}
+                  minLength={field.name === "password" ? 8 : undefined}
+                  value={isEmail ? email : undefined}
+                  onChange={isEmail ? (e) => setEmail(e.target.value) : undefined}
+                  className={`w-full border rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                    isEmail && emailStatus === "taken"    ? "border-red-300" :
+                    isEmail && emailStatus === "available" ? "border-green-300" :
+                    "border-gray-300"
+                  }`}
+                />
+                {isEmail && emailStatus === "checking" && (
+                  <p className="text-xs text-gray-400 mt-1">확인 중...</p>
+                )}
+                {isEmail && emailStatus === "available" && (
+                  <p className="text-xs text-green-600 mt-1">✓ 사용 가능한 이메일입니다</p>
+                )}
+                {isEmail && emailStatus === "taken" && (
+                  <p className="text-xs text-red-500 mt-1">이미 사용 중인 이메일입니다</p>
+                )}
+                {isEmail && emailStatus === "invalid" && (
+                  <p className="text-xs text-amber-600 mt-1">올바른 이메일 형식이 아닙니다</p>
+                )}
+                {!isEmail && field.hint && <p className="text-xs text-gray-400 mt-1">{field.hint}</p>}
+              </div>
+            );
+          })}
 
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5 text-sm text-red-600">

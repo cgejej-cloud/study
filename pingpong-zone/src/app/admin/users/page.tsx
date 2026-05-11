@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 
 type User = {
   id: string;
@@ -16,6 +17,7 @@ type User = {
 
 export default function AdminUsersPage() {
   const router = useRouter();
+  const toast = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -45,9 +47,10 @@ export default function AdminUsersPage() {
       });
       if (res.ok) {
         setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, role: newRole } : u));
+        toast.show(`${user.name}님 권한을 ${newRole === "admin" ? "관리자" : "일반"}로 변경했습니다.`, "success");
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data.error || "변경에 실패했습니다.");
+        toast.show(data.error || "변경에 실패했습니다.", "error");
       }
     } finally {
       setToggling(null);

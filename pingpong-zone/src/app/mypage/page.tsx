@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 
 type Reservation = {
   id: string;
@@ -43,6 +44,7 @@ function timeAgo(isoStr: string) {
 
 export default function MyPage() {
   const router = useRouter();
+  const toast = useToast();
   const [myId, setMyId] = useState("");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [pendingMatches, setPendingMatches] = useState<PendingMatch[]>([]);
@@ -96,9 +98,10 @@ export default function MyPage() {
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error || "취소에 실패했습니다.");
+      toast.show(data.error || "취소에 실패했습니다.", "error");
       return;
     }
+    toast.show(cancelAll ? "반복 예약을 일괄 취소했습니다." : "예약을 취소했습니다.", "success");
     setTick((t) => t + 1);
   }
 
@@ -110,7 +113,13 @@ export default function MyPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
-    if (res.ok) setTick((t) => t + 1);
+    if (res.ok) {
+      toast.show(action === "confirm" ? "경기를 승인했습니다." : "이의제기를 접수했습니다.", "success");
+      setTick((t) => t + 1);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast.show(data.error || "처리에 실패했습니다.", "error");
+    }
   }
 
   const today = new Date().toISOString().split("T")[0];
