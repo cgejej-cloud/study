@@ -36,6 +36,8 @@ type Player = {
     won: boolean;
     createdAt: string;
     myChange: number | null;
+    myScore: number | null;
+    oppScore: number | null;
   }>;
 };
 
@@ -242,6 +244,9 @@ export default function PlayerProfilePage() {
                     }`}>
                       {m.won ? "승" : "패"}
                     </span>
+                    {m.myScore !== null && m.oppScore !== null && (
+                      <span className="text-xs font-mono text-gray-500">{m.myScore}-{m.oppScore}</span>
+                    )}
                   </div>
                   <div className="text-xs text-gray-400 mt-0.5">{timeAgo(m.createdAt)}</div>
                 </Link>

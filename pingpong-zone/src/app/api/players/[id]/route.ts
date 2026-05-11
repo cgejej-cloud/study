@@ -18,14 +18,16 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
         createdAt: true,
         matchesAsPlayer1: {
           where: { status: "confirmed" },
-          select: { id: true, winnerId: true, createdAt: true, p1EloChange: true, p2EloChange: true,
+          select: { id: true, winnerId: true, createdAt: true,
+                    p1EloChange: true, p2EloChange: true, p1Score: true, p2Score: true,
                     player2: { select: { id: true, name: true } } },
           orderBy: { createdAt: "desc" },
           take: 20,
         },
         matchesAsPlayer2: {
           where: { status: "confirmed" },
-          select: { id: true, winnerId: true, createdAt: true, p1EloChange: true, p2EloChange: true,
+          select: { id: true, winnerId: true, createdAt: true,
+                    p1EloChange: true, p2EloChange: true, p1Score: true, p2Score: true,
                     player1: { select: { id: true, name: true } } },
           orderBy: { createdAt: "desc" },
           take: 20,
@@ -34,15 +36,21 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     });
     if (!user) return NextResponse.json({ error: "선수를 찾을 수 없습니다." }, { status: 404 });
 
-    type Compact = { id: string; opponentId: string; opponentName: string; won: boolean; createdAt: Date; myChange: number | null };
+    type Compact = {
+      id: string; opponentId: string; opponentName: string; won: boolean;
+      createdAt: Date; myChange: number | null;
+      myScore: number | null; oppScore: number | null;
+    };
     const matches: Compact[] = [
       ...user.matchesAsPlayer1.map((m) => ({
         id: m.id, opponentId: m.player2.id, opponentName: m.player2.name,
         won: m.winnerId === user.id, createdAt: m.createdAt, myChange: m.p1EloChange,
+        myScore: m.p1Score, oppScore: m.p2Score,
       })),
       ...user.matchesAsPlayer2.map((m) => ({
         id: m.id, opponentId: m.player1.id, opponentName: m.player1.name,
         won: m.winnerId === user.id, createdAt: m.createdAt, myChange: m.p2EloChange,
+        myScore: m.p2Score, oppScore: m.p1Score,
       })),
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 20);
 
