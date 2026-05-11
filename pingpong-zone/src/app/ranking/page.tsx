@@ -45,30 +45,38 @@ export default function RankingPage() {
   const placing = ranking.filter((e) => e.isPlacing);
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">🏆 랭킹</h1>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">🏆 랭킹</h1>
         <Link
           href="/ranking/record"
-          className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600"
+          className="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors"
         >
           경기 결과 기록
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      {/* 티어 */}
+      <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
         {TIER_INFO.map((t) => (
-          <div key={t.name} className={`${t.bg} rounded-xl p-3 text-center`}>
-            <div className="text-2xl">{t.icon}</div>
-            <div className={`text-xs font-bold mt-1 ${t.color}`}>{t.name}</div>
-            <div className="text-xs text-gray-400">{t.minElo}+ ELO</div>
+          <div key={t.name} className={`${t.bg} rounded-xl p-2.5 text-center`}>
+            <div className="text-xl">{t.icon}</div>
+            <div className={`text-xs font-bold mt-0.5 ${t.color} leading-tight`}>{t.name}</div>
+            <div className="text-[10px] text-gray-400 mt-0.5">{t.minElo}+</div>
           </div>
         ))}
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-sm text-amber-800">
-        <span className="font-semibold">⚡ 동적 K값 적용 중</span>
-        <span className="ml-2 text-amber-600">배치고사(5경기 미만) K=48 · 일반 K=24 — 티어 차이가 클수록 이변 시 ELO 변동 폭이 커집니다</span>
+      {/* 시스템 안내 */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-sm">
+          <p className="font-semibold text-amber-800 mb-0.5">⚡ 동적 K값</p>
+          <p className="text-amber-600 text-xs">배치(5경기 미만) K=48 · 일반 K=24</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3.5 text-sm">
+          <p className="font-semibold text-blue-800 mb-0.5">🛡️ 공정성 보장</p>
+          <p className="text-blue-600 text-xs">경기 기록 시 상대방 확인 후 ELO 반영 · 이의제기 가능</p>
+        </div>
       </div>
 
       {loading ? (

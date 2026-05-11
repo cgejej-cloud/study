@@ -19,6 +19,7 @@ type RankEntry = {
 
 type MatchResult = {
   match: { id: string };
+  status: "pending" | "confirmed";
   eloChange: Record<string, number>;
   placement: {
     me: { gamesPlayed: number; isPlacing: boolean };
@@ -86,22 +87,36 @@ export default function RecordMatchPage() {
     const myChange = result.eloChange[myId] ?? 0;
     const oppChange = result.eloChange[selectedOpponent!.id] ?? 0;
     const myPlacementAfter = result.placement.me;
+    const isPending = result.status === "pending";
+
     return (
       <div className="max-w-md mx-auto py-8">
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
           <div className="text-5xl mb-4">{iWon ? "🎉" : "💪"}</div>
           <h2 className="text-2xl font-bold mb-2">{iWon ? "승리!" : "패배"}</h2>
-          <p className="text-gray-500 mb-6">경기 결과가 기록되었습니다</p>
+
+          {isPending ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-5 text-left">
+              <p className="font-semibold text-blue-700 text-sm mb-1">⏳ 상대 확인 대기 중</p>
+              <p className="text-blue-600 text-xs">
+                {selectedOpponent!.name}님이 마이페이지에서 확인하면 ELO가 반영됩니다.
+                24시간 내 미확인 시 자동으로 승인됩니다.
+              </p>
+            </div>
+          ) : (
+            <p className="text-gray-500 mb-5 text-sm">경기 결과가 기록되었습니다</p>
+          )}
 
           <div className="bg-gray-50 rounded-xl p-5 space-y-3 mb-4 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">내 ELO 변동</span>
+              <span className="text-gray-500">내 예상 ELO 변동</span>
               <span className={`font-bold text-lg ${myChange >= 0 ? "text-green-600" : "text-red-500"}`}>
                 {myChange >= 0 ? "+" : ""}{myChange}
+                {isPending && <span className="text-xs text-gray-400 font-normal ml-1">(확인 후 적용)</span>}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">{selectedOpponent!.name} ELO 변동</span>
+              <span className="text-gray-500">{selectedOpponent!.name} 예상 ELO 변동</span>
               <span className={`font-bold ${oppChange >= 0 ? "text-green-600" : "text-red-500"}`}>
                 {oppChange >= 0 ? "+" : ""}{oppChange}
               </span>

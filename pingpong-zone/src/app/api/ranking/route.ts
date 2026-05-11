@@ -1,16 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { autoConfirmExpired } from "@/app/api/matches/[id]/route";
 
 const PLACEMENT_GAMES = 5;
 
 export async function GET() {
+  // 24시간 지난 pending 경기 자동 승인
+  await autoConfirmExpired();
+
   const users = await prisma.user.findMany({
     select: {
       id: true,
       name: true,
       eloRating: true,
-      matchesAsPlayer1: { select: { winnerId: true } },
-      matchesAsPlayer2: { select: { winnerId: true } },
+      matchesAsPlayer1: { where: { status: "confirmed" }, select: { winnerId: true } },
+      matchesAsPlayer2: { where: { status: "confirmed" }, select: { winnerId: true } },
     },
     orderBy: { eloRating: "desc" },
   });

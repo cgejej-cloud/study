@@ -170,11 +170,33 @@ export default function ReservePage() {
     router.push(`/reserve/confirm/${data.id}`);
   }
 
+  const step = !selectedTable ? 1 : !selectedDate ? 2 : !selectedTime ? 3 : 4;
+
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">예약하기</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">예약하기</h1>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6 space-y-6">
+      {/* 단계 표시 */}
+      <div className="flex items-center gap-2 mb-6">
+        {[
+          { n: 1, label: "탁구대" },
+          { n: 2, label: "날짜" },
+          { n: 3, label: "시간" },
+          { n: 4, label: "확정" },
+        ].map((s, i) => (
+          <div key={s.n} className="flex items-center gap-2">
+            {i > 0 && <div className={`h-px flex-1 w-6 ${step > s.n - 1 ? "bg-green-500" : "bg-gray-200"}`} />}
+            <div className={`flex items-center gap-1.5 text-xs font-semibold ${step >= s.n ? "text-green-700" : "text-gray-400"}`}>
+              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step > s.n ? "bg-green-600 text-white" : step === s.n ? "bg-green-700 text-white" : "bg-gray-200 text-gray-400"}`}>
+                {step > s.n ? "✓" : s.n}
+              </span>
+              <span className="hidden sm:inline">{s.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-white border border-gray-100 rounded-xl shadow-sm p-6 space-y-6">
         <div>
           <label className="block font-semibold mb-2">탁구대 선택</label>
           <div className="grid grid-cols-2 gap-3">

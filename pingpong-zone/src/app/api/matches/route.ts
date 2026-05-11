@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
-const PLACEMENT_GAMES = 5;  // 배치고사 경기 수
-const K_PLACEMENT = 48;     // 배치 중 K값 (빠른 랭크 정착)
-const K_NORMAL = 24;        // 일반 K값 (안정화)
+const PLACEMENT_GAMES = 5;
+const K_PLACEMENT = 48;
+const K_NORMAL = 24;
+const DAILY_MATCH_LIMIT = 5;    // 하루 최대 경기 수
+const PAIR_DAILY_LIMIT = 1;     // 같은 상대와 하루 최대 경기 수
+const COOLDOWN_MINUTES = 30;    // 연속 경기 최소 간격 (분)
+export const AUTO_CONFIRM_HOURS = 24; // 자동 승인 대기 시간
 
 function getK(totalGames: number) {
   return totalGames < PLACEMENT_GAMES ? K_PLACEMENT : K_NORMAL;
@@ -14,15 +18,17 @@ function expectedScore(ratingA: number, ratingB: number) {
   return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
 }
 
-function calcNewRating(rating: number, k: number, expected: number, actual: number) {
-  return Math.round(rating + k * (actual - expected));
+function calcEloChange(rating: number, k: number, expected: number, actual: number) {
+  return Math.round(k * (actual - expected));
 }
 
-async function getGameCount(userId: string) {
-  const count = await prisma.match.count({
-    where: { OR: [{ player1Id: userId }, { player2Id: userId }] },
+async function getConfirmedGameCount(userId: string) {
+  return prisma.match.count({
+    where: {
+      OR: [{ player1Id: userId }, { player2Id: userId }],
+      status: "confirmed",
+    },
   });
-  return count;
 }
 
 export async function GET(req: NextRequest) {
@@ -31,13 +37,28 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get("userId") || session.id;
+  const pending = searchParams.get("pending") === "true";
+
+  if (pending) {
+    // 나(player2)에게 온 대기 중 경기 목록
+    const pendingMatches = await prisma.match.findMany({
+      where: { player2Id: session.id, status: "pending" },
+      include: {
+        player1: { select: { id: true, name: true, eloRating: true } },
+        player2: { select: { id: true, name: true, eloRating: true } },
+        winner:  { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(pendingMatches);
+  }
 
   const matches = await prisma.match.findMany({
     where: { OR: [{ player1Id: userId }, { player2Id: userId }] },
     include: {
       player1: { select: { id: true, name: true, eloRating: true } },
       player2: { select: { id: true, name: true, eloRating: true } },
-      winner: { select: { id: true, name: true } },
+      winner:  { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "desc" },
     take: 20,
@@ -59,54 +80,121 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "자기 자신과의 경기는 기록할 수 없습니다." }, { status: 400 });
   }
 
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+
+  // ── 악용 방지 검사 ──────────────────────────────────────────
+
+  // 1. 하루 경기 횟수 제한
+  const myTodayCount = await prisma.match.count({
+    where: {
+      OR: [{ player1Id: session.id }, { player2Id: session.id }],
+      createdAt: { gte: todayStart },
+      status: { not: "disputed" },
+    },
+  });
+  if (myTodayCount >= DAILY_MATCH_LIMIT) {
+    return NextResponse.json(
+      { error: `하루 최대 ${DAILY_MATCH_LIMIT}경기까지만 기록할 수 있습니다.` },
+      { status: 429 }
+    );
+  }
+
+  // 2. 같은 상대와 하루 1경기 제한
+  const pairTodayCount = await prisma.match.count({
+    where: {
+      OR: [
+        { player1Id: session.id, player2Id: opponentId },
+        { player1Id: opponentId, player2Id: session.id },
+      ],
+      createdAt: { gte: todayStart },
+      status: { not: "disputed" },
+    },
+  });
+  if (pairTodayCount >= PAIR_DAILY_LIMIT) {
+    return NextResponse.json(
+      { error: "같은 상대와는 하루에 1경기만 기록할 수 있습니다." },
+      { status: 429 }
+    );
+  }
+
+  // 3. 연속 경기 쿨다운 (30분)
+  const cooldownTime = new Date(now.getTime() - COOLDOWN_MINUTES * 60 * 1000);
+  const recentMatch = await prisma.match.findFirst({
+    where: {
+      player1Id: session.id, // 내가 기록자인 경우만 체크
+      createdAt: { gte: cooldownTime },
+      status: { not: "disputed" },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  if (recentMatch) {
+    const minutesLeft = Math.ceil(
+      (recentMatch.createdAt.getTime() + COOLDOWN_MINUTES * 60 * 1000 - now.getTime()) / 60000
+    );
+    return NextResponse.json(
+      { error: `이전 경기 기록 후 ${minutesLeft}분 후에 다시 기록할 수 있습니다.` },
+      { status: 429 }
+    );
+  }
+
+  // ── ELO 미리 계산 (상대 확인 후 적용) ───────────────────────
+
   const [me, opponent, myGames, oppGames] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.id } }),
     prisma.user.findUnique({ where: { id: opponentId } }),
-    getGameCount(session.id),
-    getGameCount(opponentId),
+    getConfirmedGameCount(session.id),
+    getConfirmedGameCount(opponentId),
   ]);
 
   if (!me || !opponent) {
     return NextResponse.json({ error: "사용자를 찾을 수 없습니다." }, { status: 404 });
   }
 
-  const winnerId = iWon ? me.id : opponent.id;
-  const loserId  = iWon ? opponent.id : me.id;
-
+  const winnerId     = iWon ? me.id : opponent.id;
   const winnerRating = iWon ? me.eloRating : opponent.eloRating;
   const loserRating  = iWon ? opponent.eloRating : me.eloRating;
   const winnerGames  = iWon ? myGames : oppGames;
   const loserGames   = iWon ? oppGames : myGames;
+  const winnerK      = getK(winnerGames);
+  const loserK       = getK(loserGames);
+  const expectedWin  = expectedScore(winnerRating, loserRating);
+  const winnerChange = calcEloChange(winnerRating, winnerK, expectedWin, 1);
+  const loserChange  = calcEloChange(loserRating, loserK, 1 - expectedWin, 0);
 
-  const winnerK = getK(winnerGames);
-  const loserK  = getK(loserGames);
+  // player1 = 기록자(me), player2 = 상대(opponent)
+  const p1EloChange = iWon ? winnerChange : loserChange;
+  const p2EloChange = iWon ? loserChange  : winnerChange;
 
-  const expectedWinner = expectedScore(winnerRating, loserRating);
-  const newWinnerRating = calcNewRating(winnerRating, winnerK, expectedWinner, 1);
-  const newLoserRating  = calcNewRating(loserRating,  loserK,  1 - expectedWinner, 0);
-
-  const [match] = await prisma.$transaction([
-    prisma.match.create({
-      data: { player1Id: me.id, player2Id: opponent.id, winnerId },
-      include: {
-        player1: { select: { id: true, name: true } },
-        player2: { select: { id: true, name: true } },
-        winner: { select: { id: true, name: true } },
-      },
-    }),
-    prisma.user.update({ where: { id: winnerId }, data: { eloRating: newWinnerRating } }),
-    prisma.user.update({ where: { id: loserId },  data: { eloRating: newLoserRating } }),
-  ]);
+  // pending 상태로 생성 — ELO는 상대 확인 시 적용
+  const match = await prisma.match.create({
+    data: {
+      player1Id:   me.id,
+      player2Id:   opponent.id,
+      winnerId,
+      status:      "pending",
+      p1EloChange,
+      p2EloChange,
+    },
+    include: {
+      player1: { select: { id: true, name: true } },
+      player2: { select: { id: true, name: true } },
+      winner:  { select: { id: true, name: true } },
+    },
+  });
 
   return NextResponse.json({
     match,
+    status: "pending",
+    autoConfirmHours: AUTO_CONFIRM_HOURS,
     eloChange: {
-      [winnerId]: newWinnerRating - winnerRating,
-      [loserId]:  newLoserRating  - loserRating,
+      [me.id]:       p1EloChange,
+      [opponent.id]: p2EloChange,
     },
     placement: {
-      me:       { gamesPlayed: myGames + 1,  isPlacing: myGames + 1  < PLACEMENT_GAMES },
-      opponent: { gamesPlayed: oppGames + 1, isPlacing: oppGames + 1 < PLACEMENT_GAMES },
+      me:       { gamesPlayed: myGames,  isPlacing: myGames  < PLACEMENT_GAMES },
+      opponent: { gamesPlayed: oppGames, isPlacing: oppGames < PLACEMENT_GAMES },
     },
   });
 }

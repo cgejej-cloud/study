@@ -56,12 +56,17 @@ model Reservation {
 }
 
 model Match {
-  id        String   @id @default(cuid())
-  player1Id String
-  player2Id String
-  winnerId  String
-  createdAt DateTime @default(now())
-  player1   User     @relation("Player1Matches", fields: [player1Id], references: [id])
-  player2   User     @relation("Player2Matches", fields: [player2Id], references: [id])
-  winner    User     @relation("WonMatches", fields: [winnerId], references: [id])
+  id          String    @id @default(cuid())
+  player1Id   String
+  player2Id   String
+  winnerId    String
+  // pending: ELO 미적용, 상대 확인 대기 | confirmed: ELO 적용 완료 | disputed: 상대가 이의제기
+  status      String    @default("confirmed")
+  p1EloChange Int?
+  p2EloChange Int?
+  confirmedAt DateTime?
+  createdAt   DateTime  @default(now())
+  player1     User      @relation("Player1Matches", fields: [player1Id], references: [id])
+  player2     User      @relation("Player2Matches", fields: [player2Id], references: [id])
+  winner      User      @relation("WonMatches", fields: [winnerId], references: [id])
 }
