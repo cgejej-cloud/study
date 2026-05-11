@@ -1,6 +1,7 @@
 import Link from "next/link";
 import TodayStatus from "@/components/TodayStatus";
 import NoticeBanner from "@/components/NoticeBanner";
+import ActivityFeed from "@/components/ActivityFeed";
 
 export default function HomePage() {
   return (
@@ -42,6 +43,9 @@ export default function HomePage() {
 
       {/* ── 오늘 현황 ────────────────────────────────────────── */}
       <TodayStatus />
+
+      {/* ── 최근 경기 활동 ─────────────────────────────────── */}
+      <ActivityFeed />
 
       {/* ── 특징 카드 ────────────────────────────────────────── */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">

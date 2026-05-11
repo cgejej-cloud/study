@@ -17,6 +17,18 @@ type RankEntry = {
   streak: { type: "W" | "L"; count: number } | null;
 };
 
+type SeasonStanding = {
+  id: string;
+  name: string;
+  rating: number;
+  rank: number;
+  wins: number;
+  losses: number;
+  delta?: number;
+  winRate?: number | null;
+};
+type ActiveSeason = { id: string; name: string } | null;
+
 const TIER_INFO = [
   { name: "그랜드마스터", minElo: 1400, color: "text-yellow-500", bg: "bg-yellow-50", icon: "👑" },
   { name: "마스터",       minElo: 1300, color: "text-purple-600", bg: "bg-purple-50", icon: "💎" },
@@ -39,13 +51,31 @@ export default function RankingPage() {
   const [myId, setMyId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortKey>("elo");
+  const [tab, setTab] = useState<"overall" | "season">("overall");
+  const [activeSeason, setActiveSeason] = useState<ActiveSeason>(null);
+  const [seasonStandings, setSeasonStandings] = useState<SeasonStanding[]>([]);
+  const [seasonLoading, setSeasonLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then((d) => { if (d?.id) setMyId(d.id); });
     fetch("/api/ranking")
       .then((r) => r.json())
       .then((data) => { setRanking(Array.isArray(data) ? data : []); setLoading(false); });
+    fetch("/api/seasons")
+      .then((r) => r.ok ? r.json() : { active: null })
+      .then((d) => setActiveSeason(d.active ? { id: d.active.id, name: d.active.name } : null))
+      .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (tab !== "season" || !activeSeason) return;
+    setSeasonLoading(true);
+    fetch(`/api/seasons/${activeSeason.id}/standings`)
+      .then((r) => r.ok ? r.json() : { standings: [] })
+      .then((d) => setSeasonStandings(d.standings ?? []))
+      .catch(() => setSeasonStandings([]))
+      .finally(() => setSeasonLoading(false));
+  }, [tab, activeSeason]);
 
   const allPlaced = ranking.filter((e) => !e.isPlacing);
   const placing = ranking.filter((e) => e.isPlacing);
@@ -81,6 +111,28 @@ export default function RankingPage() {
         ))}
       </div>
 
+      {/* 시즌 탭 */}
+      {activeSeason && (
+        <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1 flex gap-1">
+          <button
+            onClick={() => setTab("overall")}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              tab === "overall" ? "bg-green-700 text-white" : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            전체 랭킹
+          </button>
+          <button
+            onClick={() => setTab("season")}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              tab === "season" ? "bg-green-700 text-white" : "text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            🏆 {activeSeason.name}
+          </button>
+        </div>
+      )}
+
       {/* 시스템 안내 */}
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-sm">
@@ -93,7 +145,62 @@ export default function RankingPage() {
         </div>
       </div>
 
-      {loading ? (
+      {tab === "season" && activeSeason ? (
+        seasonLoading ? (
+          <p className="text-gray-400 text-center py-12">불러오는 중...</p>
+        ) : seasonStandings.length === 0 ? (
+          <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-10 text-center">
+            <p className="text-4xl mb-3">🏆</p>
+            <p className="font-semibold text-gray-700">{activeSeason.name} 시즌 경기 기록이 없습니다</p>
+            <p className="text-gray-500 text-sm mt-1">시즌 기간 내 경기를 기록하면 자동 집계됩니다</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-b">
+              <span className="font-bold text-gray-700">🏆 {activeSeason.name} 시즌 랭킹</span>
+              <span className="ml-2 text-xs text-gray-500">{seasonStandings.length}명 · 시즌 포인트 변동 기준</span>
+            </div>
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[520px]">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  {["순위", "선수", "시즌 포인트", "승", "패", "승률"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {seasonStandings.map((s) => {
+                  const isMe = s.id === myId;
+                  return (
+                    <tr key={s.id} className={isMe ? "bg-green-50" : "hover:bg-gray-50"}>
+                      <td className="px-4 py-3 font-bold text-gray-400">
+                        {s.rank === 1 ? "🥇" : s.rank === 2 ? "🥈" : s.rank === 3 ? "🥉" : `#${s.rank}`}
+                      </td>
+                      <td className="px-4 py-3 font-semibold">
+                        <div className="flex items-center gap-2">
+                          <Avatar name={s.name} size="sm" />
+                          <Link href={`/players/${s.id}`} className="hover:text-green-700 hover:underline">{s.name}</Link>
+                          {isMe && <span className="text-xs text-green-600 font-normal">(나)</span>}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-bold">
+                        <span className={(s.delta ?? 0) >= 0 ? "text-green-600" : "text-red-500"}>
+                          {(s.delta ?? 0) >= 0 ? "+" : ""}{s.delta ?? 0}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-blue-600 font-medium">{s.wins}</td>
+                      <td className="px-4 py-3 text-red-400 font-medium">{s.losses}</td>
+                      <td className="px-4 py-3 text-gray-600">{s.winRate !== null && s.winRate !== undefined ? `${s.winRate}%` : "-"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            </div>
+          </div>
+        )
+      ) : loading ? (
         <p className="text-gray-400 text-center py-12">불러오는 중...</p>
       ) : (
         <>
