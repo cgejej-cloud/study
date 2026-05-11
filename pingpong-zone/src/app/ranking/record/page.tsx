@@ -46,7 +46,6 @@ function calcEloChange(myElo: number, oppElo: number, myGames: number, iWon: boo
 export default function RecordMatchPage() {
   const router = useRouter();
   const [myId, setMyId] = useState<string>("");
-  const [me, setMe] = useState<RankEntry | null>(null);
   const [users, setUsers] = useState<RankEntry[]>([]);
   const [selectedOpponent, setSelectedOpponent] = useState<RankEntry | null>(null);
   const [iWon, setIWon] = useState<boolean | null>(null);
@@ -75,11 +74,7 @@ export default function RecordMatchPage() {
     return () => { cancelled = true; };
   }, [router]);
 
-  useEffect(() => {
-    const found = users.find((u) => u.id === myId);
-    if (found) setMe(found);
-  }, [users, myId]);
-
+  const me = users.find((u) => u.id === myId) ?? null;
   const opponents = users.filter((u) => u.id !== myId && u.name.includes(search));
 
   async function handleSubmit() {
@@ -180,7 +175,6 @@ export default function RecordMatchPage() {
 
   const myGames = me?.total ?? 0;
   const myElo = me?.eloRating ?? 1000;
-  const myK = myGames < PLACEMENT_GAMES ? K_PLACEMENT : K_NORMAL;
 
   return (
     <div className="max-w-lg mx-auto">

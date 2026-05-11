@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { notifyOpponent } from "@/app/api/matches/[id]/route";
+import { notifyOpponent, AUTO_CONFIRM_HOURS } from "@/lib/matchHelpers";
 
 const PLACEMENT_GAMES = 5;
 const K_PLACEMENT = 48;
@@ -9,7 +9,7 @@ const K_NORMAL = 24;
 const DAILY_MATCH_LIMIT = 5;    // 하루 최대 경기 수
 const PAIR_DAILY_LIMIT = 1;     // 같은 상대와 하루 최대 경기 수
 const COOLDOWN_MINUTES = 30;    // 연속 경기 최소 간격 (분)
-export const AUTO_CONFIRM_HOURS = 24; // 자동 승인 대기 시간
+// AUTO_CONFIRM_HOURS는 lib/matchHelpers.ts 에서 import
 
 function getK(totalGames: number) {
   return totalGames < PLACEMENT_GAMES ? K_PLACEMENT : K_NORMAL;

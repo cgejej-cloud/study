@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { autoConfirmExpired } from "@/app/api/matches/[id]/route";
+import { autoConfirmExpired } from "@/lib/matchHelpers";
 
 const PLACEMENT_GAMES = 5;
 
