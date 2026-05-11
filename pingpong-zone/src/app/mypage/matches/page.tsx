@@ -18,6 +18,19 @@ type Match = {
   season:  { name: string } | null;
 };
 
+function timeAgo(isoStr: string) {
+  const diff = Date.now() - new Date(isoStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "방금 전";
+  if (m < 60) return `${m}분 전`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}시간 전`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}일 전`;
+  if (d < 30) return `${Math.floor(d / 7)}주 전`;
+  return new Date(isoStr).toLocaleDateString("ko-KR");
+}
+
 function SparkLine({ data, height = 60 }: { data: number[]; height?: number }) {
   if (data.length < 2) return null;
   const pad = 4;
@@ -200,7 +213,7 @@ export default function MatchHistoryPage() {
                       {m.season && <span className="text-xs text-gray-400">{m.season.name}</span>}
                     </div>
                     <div className="text-xs text-gray-400 mt-0.5">
-                      {new Date(m.createdAt).toLocaleDateString("ko-KR")}
+                      {timeAgo(m.createdAt)}
                     </div>
                   </div>
                   {myChange !== null && m.status === "confirmed" && (

@@ -65,13 +65,14 @@ export default function AdminUsersPage() {
         <h1 className="text-3xl font-bold">회원 관리</h1>
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4">
         <input
-          type="text"
+          type="search"
           placeholder="이름, 이메일, 연락처 검색"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
+          aria-label="회원 검색"
+          className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 w-full sm:w-64"
         />
         <span className="text-sm text-gray-500">{filtered.length}명</span>
       </div>

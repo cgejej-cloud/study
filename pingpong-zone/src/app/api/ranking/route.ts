@@ -5,6 +5,7 @@ import { autoConfirmExpired } from "@/app/api/matches/[id]/route";
 const PLACEMENT_GAMES = 5;
 
 export async function GET() {
+  try {
   // 24시간 지난 pending 경기 자동 승인
   await autoConfirmExpired();
 
@@ -40,4 +41,8 @@ export async function GET() {
   });
 
   return NextResponse.json(ranking);
+  } catch (e) {
+    console.error("[/api/ranking]", e);
+    return NextResponse.json({ error: "랭킹을 불러올 수 없습니다." }, { status: 500 });
+  }
 }

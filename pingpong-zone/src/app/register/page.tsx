@@ -49,23 +49,27 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {[
-            { name: "name",     label: "이름",    type: "text",     required: true,  placeholder: "홍길동" },
-            { name: "email",    label: "이메일",  type: "email",    required: true,  placeholder: "email@example.com" },
-            { name: "password", label: "비밀번호", type: "password", required: true,  placeholder: "••••••••" },
-            { name: "phone",    label: "전화번호", type: "tel",      required: false, placeholder: "010-0000-0000 (선택)" },
+            { name: "name",     label: "이름",    type: "text",     required: true,  placeholder: "홍길동",          autoComplete: "name",         hint: "" },
+            { name: "email",    label: "이메일",  type: "email",    required: true,  placeholder: "email@example.com", autoComplete: "email",        hint: "" },
+            { name: "password", label: "비밀번호", type: "password", required: true,  placeholder: "••••••••",       autoComplete: "new-password", hint: "8자 이상 입력해주세요" },
+            { name: "phone",    label: "전화번호", type: "tel",      required: false, placeholder: "010-0000-0000",  autoComplete: "tel",          hint: "선택 사항입니다" },
           ].map((field) => (
             <div key={field.name}>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label htmlFor={`reg-${field.name}`} className="block text-sm font-medium text-gray-700 mb-1.5">
                 {field.label}
-                {field.required && <span className="text-red-400 ml-1">*</span>}
+                {field.required && <span className="text-red-400 ml-1" aria-hidden="true">*</span>}
               </label>
               <input
+                id={`reg-${field.name}`}
                 name={field.name}
                 type={field.type}
                 required={field.required}
                 placeholder={field.placeholder}
+                autoComplete={field.autoComplete}
+                minLength={field.name === "password" ? 8 : undefined}
                 className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
+              {field.hint && <p className="text-xs text-gray-400 mt-1">{field.hint}</p>}
             </div>
           ))}
 

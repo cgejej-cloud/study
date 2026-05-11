@@ -29,10 +29,14 @@ function getTier(elo: number) {
   return TIER_INFO.find((t) => elo >= t.minElo) ?? TIER_INFO[TIER_INFO.length - 1];
 }
 
+type SortKey = "elo" | "name" | "winRate" | "games";
+
 export default function RankingPage() {
   const [ranking, setRanking] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [myId, setMyId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("elo");
 
   useEffect(() => {
     fetch("/api/me").then((r) => r.json()).then((d) => { if (d?.id) setMyId(d.id); });
@@ -41,8 +45,16 @@ export default function RankingPage() {
       .then((data) => { setRanking(Array.isArray(data) ? data : []); setLoading(false); });
   }, []);
 
-  const placed = ranking.filter((e) => !e.isPlacing);
+  const allPlaced = ranking.filter((e) => !e.isPlacing);
   const placing = ranking.filter((e) => e.isPlacing);
+
+  const filtered = allPlaced.filter((e) => e.name.toLowerCase().includes(search.trim().toLowerCase()));
+  const placed = [...filtered].sort((a, b) => {
+    if (sortBy === "name")    return a.name.localeCompare(b.name, "ko");
+    if (sortBy === "winRate") return (b.winRate ?? -1) - (a.winRate ?? -1);
+    if (sortBy === "games")   return b.total - a.total;
+    return b.eloRating - a.eloRating;
+  });
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -83,12 +95,44 @@ export default function RankingPage() {
         <p className="text-gray-400 text-center py-12">불러오는 중...</p>
       ) : (
         <>
-          <div className="bg-white rounded-xl shadow overflow-hidden mb-6">
-            <div className="px-4 py-3 bg-gray-50 border-b">
-              <span className="font-bold text-gray-700">랭킹</span>
-              <span className="ml-2 text-xs text-gray-400">{placed.length}명</span>
+          {allPlaced.length === 0 ? (
+            <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-10 text-center">
+              <p className="text-4xl mb-3">🏓</p>
+              <p className="font-semibold text-gray-700">아직 정식 랭킹에 입력된 선수가 없습니다</p>
+              <p className="text-gray-500 text-sm mt-1">5경기를 완료하면 자동으로 등록됩니다</p>
+              <Link href="/ranking/record" className="inline-block mt-4 bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-green-600">
+                경기 기록하기
+              </Link>
             </div>
-            <table className="w-full text-sm">
+          ) : (
+          <div className="bg-white rounded-xl shadow overflow-hidden mb-6">
+            <div className="px-4 py-3 bg-gray-50 border-b flex flex-wrap items-center gap-2">
+              <span className="font-bold text-gray-700">랭킹</span>
+              <span className="text-xs text-gray-400">{placed.length}명</span>
+              <div className="ml-auto flex items-center gap-2 flex-wrap">
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="선수 검색"
+                  aria-label="선수 이름 검색"
+                  className="border border-gray-200 rounded-lg px-2.5 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-green-500 w-32"
+                />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortKey)}
+                  aria-label="정렬 기준"
+                  className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                >
+                  <option value="elo">포인트순</option>
+                  <option value="name">이름순</option>
+                  <option value="winRate">승률순</option>
+                  <option value="games">경기수순</option>
+                </select>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[560px]">
               <thead className="bg-gray-50 border-b">
                 <tr>
                   {["순위", "티어", "선수", "포인트", "승", "패", "승률"].map((h) => (
@@ -98,7 +142,7 @@ export default function RankingPage() {
               </thead>
               <tbody className="divide-y">
                 {placed.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">정식 랭킹에 등록된 선수가 없습니다</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">검색 결과가 없습니다</td></tr>
                 ) : placed.map((entry, i) => {
                   const tier = getTier(entry.eloRating);
                   const isMe = entry.id === myId;
@@ -133,7 +177,9 @@ export default function RankingPage() {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
+          )}
 
           {placing.length > 0 && (
             <div className="bg-white rounded-xl shadow overflow-hidden">

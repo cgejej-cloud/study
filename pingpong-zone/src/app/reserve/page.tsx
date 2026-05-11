@@ -235,7 +235,7 @@ export default function ReservePage() {
         {selectedTable && selectedDate && (
           <div>
             <label className="block font-semibold mb-2">시간 선택 (1시간 단위)</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
               {TIME_SLOTS.map((time) => {
                 const status = getSlotStatus(time);
                 return (
@@ -244,7 +244,8 @@ export default function ReservePage() {
                     type="button"
                     disabled={status !== "available"}
                     onClick={() => setSelectedTime(time)}
-                    className={`py-2 rounded-lg text-sm font-medium transition ${
+                    aria-label={`${time} ${status === "reserved" ? "예약됨" : status === "blocked" ? "예약 불가" : "예약 가능"}`}
+                    className={`min-h-[44px] py-3 rounded-lg text-sm font-medium transition ${
                       status === "reserved"
                         ? "bg-red-100 text-red-400 cursor-not-allowed"
                         : status === "blocked"

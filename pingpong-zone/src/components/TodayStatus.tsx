@@ -8,14 +8,16 @@ type Slot = { startTime: string; endTime: string; type: "reserved" | "blocked"; 
 type TableStatus = { id: string; name: string; description: string | null; bookedSlots: Slot[] };
 
 export default function TodayStatus() {
-  const [tables, setTables] = useState<TableStatus[]>([]);
+  const [tables, setTables] = useState<TableStatus[] | null>(null);
+  const [error, setError] = useState(false);
   const today = new Date().toISOString().split("T")[0];
   const nowHour = new Date().getHours();
 
   useEffect(() => {
     fetch(`/api/availability?date=${today}`)
-      .then((r) => r.json())
-      .then((data) => setTables(Array.isArray(data) ? data : []));
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((data) => setTables(Array.isArray(data) ? data : []))
+      .catch(() => setError(true));
   }, [today]);
 
   function getSlotState(table: TableStatus, hour: string): "reserved" | "blocked" | "past" | "now" | "available" {
@@ -29,7 +31,32 @@ export default function TodayStatus() {
     return slot.type;
   }
 
-  if (tables.length === 0) return null;
+  if (error) {
+    return (
+      <section className="mt-8 bg-white border border-gray-100 rounded-xl shadow-sm p-6">
+        <h2 className="text-lg font-bold text-gray-700 mb-1">오늘의 예약 현황</h2>
+        <p className="text-gray-400 text-sm">현황을 불러오는 중 오류가 발생했습니다.</p>
+      </section>
+    );
+  }
+  if (tables === null) {
+    return (
+      <section className="mt-8 bg-white border border-gray-100 rounded-xl shadow-sm p-6 animate-pulse">
+        <div className="h-6 w-40 bg-gray-100 rounded mb-4" />
+        <div className="space-y-2">
+          {[1, 2].map((i) => <div key={i} className="h-7 bg-gray-50 rounded" />)}
+        </div>
+      </section>
+    );
+  }
+  if (tables.length === 0) {
+    return (
+      <section className="mt-8 bg-white border border-gray-100 rounded-xl shadow-sm p-6 text-center">
+        <p className="text-3xl mb-2">🏓</p>
+        <p className="text-gray-500 text-sm">등록된 탁구대가 없습니다.</p>
+      </section>
+    );
+  }
 
   return (
     <section className="mt-8 bg-white rounded-xl shadow p-6">
