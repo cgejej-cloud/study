@@ -40,10 +40,11 @@ export async function POST(req: NextRequest) {
     ],
   };
 
-  // 반복 예약 날짜 목록 생성
-  const weeks = recurring?.weeks ?? 0;
-  const dates: string[] = [date];
-  for (let i = 1; i <= weeks; i++) {
+  // 반복 예약 날짜 목록 생성 — weeks=N 이면 총 N개 예약 (첫 주 포함)
+  const weeks = Math.max(0, recurring?.weeks ?? 0);
+  const total = weeks > 0 ? weeks : 1;
+  const dates: string[] = [];
+  for (let i = 0; i < total; i++) {
     const d = new Date(date + "T00:00:00");
     d.setDate(d.getDate() + i * 7);
     dates.push(d.toISOString().split("T")[0]);
@@ -68,35 +69,36 @@ export async function POST(req: NextRequest) {
   const user = await prisma.user.findUnique({ where: { id: session.id } });
   const table = await prisma.table.findUnique({ where: { id: tableId } });
 
-  // 첫 번째 예약 생성
-  const firstReservation = await prisma.reservation.create({
-    data: {
-      userId: session.id,
-      tableId,
-      date: dates[0],
-      startTime,
-      endTime,
-      isRecurring: weeks > 0,
-      recurrenceEnd: weeks > 0 ? dates[dates.length - 1] : null,
-    },
-    include: { table: true },
-  });
-
-  // 반복 예약 생성
-  if (weeks > 0 && dates.length > 1) {
-    await prisma.reservation.createMany({
-      data: dates.slice(1).map((d) => ({
+  // 트랜잭션으로 전체 예약을 원자적으로 생성 (부분 실패 시 전체 롤백)
+  const firstReservation = await prisma.$transaction(async (tx) => {
+    const first = await tx.reservation.create({
+      data: {
         userId: session.id,
         tableId,
-        date: d,
+        date: dates[0],
         startTime,
         endTime,
-        isRecurring: true,
-        recurrenceEnd: dates[dates.length - 1],
-        parentId: firstReservation.id,
-      })),
+        isRecurring: weeks > 0,
+        recurrenceEnd: weeks > 0 ? dates[dates.length - 1] : null,
+      },
+      include: { table: true },
     });
-  }
+    if (weeks > 0 && dates.length > 1) {
+      await tx.reservation.createMany({
+        data: dates.slice(1).map((d) => ({
+          userId: session.id,
+          tableId,
+          date: d,
+          startTime,
+          endTime,
+          isRecurring: true,
+          recurrenceEnd: dates[dates.length - 1],
+          parentId: first.id,
+        })),
+      });
+    }
+    return first;
+  });
 
   // 확인 이메일 발송 (설정된 경우)
   if (user?.emailNotify && user.email) {
@@ -110,5 +112,5 @@ export async function POST(req: NextRequest) {
     }).catch(() => {});
   }
 
-  return NextResponse.json({ ...firstReservation, recurringCount: weeks });
+  return NextResponse.json({ ...firstReservation, recurringCount: dates.length });
 }

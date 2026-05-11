@@ -9,6 +9,7 @@ export default function Header() {
   const pathname = usePathname();
   const [session, setSession] = useState<SessionPayload | null | undefined>(undefined);
   const [pendingCount, setPendingCount] = useState(0);
+  const [disputeCount, setDisputeCount] = useState(0);
 
   useEffect(() => {
     fetch("/api/me")
@@ -23,12 +24,19 @@ export default function Header() {
       .then((r) => r.json())
       .then((d) => setPendingCount(Array.isArray(d) ? d.length : 0))
       .catch(() => {});
+    if (session.role === "admin") {
+      fetch("/api/admin/disputes")
+        .then((r) => r.ok ? r.json() : [])
+        .then((d) => setDisputeCount(Array.isArray(d) ? d.length : 0))
+        .catch(() => {});
+    }
   }, [session]);
 
   async function handleLogout() {
     await fetch("/api/logout", { method: "POST" });
     setSession(null);
     setPendingCount(0);
+    setDisputeCount(0);
     window.location.href = "/";
   }
 
@@ -80,7 +88,23 @@ export default function Header() {
                   </span>
                 )}
               </Link>
-              {session.role === "admin" && navLink("/admin", "관리")}
+              {session.role === "admin" && (
+                <Link
+                  href="/admin"
+                  className={`relative text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                    pathname.startsWith("/admin")
+                      ? "bg-white/20 text-white"
+                      : "text-green-100 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  관리
+                  {disputeCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                      {disputeCount}
+                    </span>
+                  )}
+                </Link>
+              )}
               <span className="hidden sm:inline text-green-300 text-sm px-2">{session.name}</span>
               <button
                 onClick={handleLogout}

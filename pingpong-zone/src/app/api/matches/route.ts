@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     where: {
       OR: [{ player1Id: session.id }, { player2Id: session.id }],
       createdAt: { gte: todayStart },
-      status: { not: "disputed" },
+      status: { notIn: ["disputed", "voided"] },
     },
   });
   if (myTodayCount >= DAILY_MATCH_LIMIT) {
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         { player1Id: opponentId, player2Id: session.id },
       ],
       createdAt: { gte: todayStart },
-      status: { not: "disputed" },
+      status: { notIn: ["disputed", "voided"] },
     },
   });
   if (pairTodayCount >= PAIR_DAILY_LIMIT) {
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     where: {
       OR: [{ player1Id: session.id }, { player2Id: session.id }],
       createdAt: { gte: cooldownTime },
-      status: { not: "disputed" },
+      status: { notIn: ["disputed", "voided"] },
     },
     orderBy: { createdAt: "desc" },
   });
