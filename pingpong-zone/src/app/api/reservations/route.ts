@@ -62,55 +62,63 @@ export async function POST(req: NextRequest) {
     dates.push(d.toISOString().split("T")[0]);
   }
 
-  // 모든 날짜에 대해 충돌 검사
-  for (const d of dates) {
-    const conflict = await prisma.reservation.findFirst({
-      where: { tableId, date: d, status: "confirmed", ...timeFilter },
-    });
-    if (conflict) {
-      return NextResponse.json({ error: `${d} 해당 시간은 이미 예약된 시간대입니다.` }, { status: 409 });
-    }
-    const blockedConflict = await prisma.blockedSlot.findFirst({
-      where: { tableId, date: d, ...timeFilter },
-    });
-    if (blockedConflict) {
-      return NextResponse.json({ error: `${d} 예약 불가 시간대입니다.` }, { status: 409 });
-    }
-  }
-
   const user = await prisma.user.findUnique({ where: { id: session.id } });
   const table = await prisma.table.findUnique({ where: { id: tableId } });
 
-  // 트랜잭션으로 전체 예약을 원자적으로 생성 (부분 실패 시 전체 롤백)
-  const firstReservation = await prisma.$transaction(async (tx) => {
-    const first = await tx.reservation.create({
-      data: {
-        userId: session.id,
-        tableId,
-        date: dates[0],
-        startTime,
-        endTime,
-        isRecurring: weeks > 0,
-        recurrenceEnd: weeks > 0 ? dates[dates.length - 1] : null,
-      },
-      include: { table: true },
-    });
-    if (weeks > 0 && dates.length > 1) {
-      await tx.reservation.createMany({
-        data: dates.slice(1).map((d) => ({
+  // 충돌 검사 + 예약 생성을 단일 트랜잭션으로 묶어 TOCTOU 동시 더블 부킹 방지
+  let firstReservation;
+  try {
+    firstReservation = await prisma.$transaction(async (tx) => {
+      for (const d of dates) {
+        const conflict = await tx.reservation.findFirst({
+          where: { tableId, date: d, status: "confirmed", ...timeFilter },
+        });
+        if (conflict) {
+          throw new Error(`CONFLICT::${d} 해당 시간은 이미 예약된 시간대입니다.`);
+        }
+        const blockedConflict = await tx.blockedSlot.findFirst({
+          where: { tableId, date: d, ...timeFilter },
+        });
+        if (blockedConflict) {
+          throw new Error(`BLOCKED::${d} 예약 불가 시간대입니다.`);
+        }
+      }
+      const first = await tx.reservation.create({
+        data: {
           userId: session.id,
           tableId,
-          date: d,
+          date: dates[0],
           startTime,
           endTime,
-          isRecurring: true,
-          recurrenceEnd: dates[dates.length - 1],
-          parentId: first.id,
-        })),
+          isRecurring: weeks > 0,
+          recurrenceEnd: weeks > 0 ? dates[dates.length - 1] : null,
+        },
+        include: { table: true },
       });
+      if (weeks > 0 && dates.length > 1) {
+        await tx.reservation.createMany({
+          data: dates.slice(1).map((d) => ({
+            userId: session.id,
+            tableId,
+            date: d,
+            startTime,
+            endTime,
+            isRecurring: true,
+            recurrenceEnd: dates[dates.length - 1],
+            parentId: first.id,
+          })),
+        });
+      }
+      return first;
+    }, { timeout: 10_000 });
+  } catch (e) {
+    const msg = (e as Error).message;
+    if (msg.startsWith("CONFLICT::") || msg.startsWith("BLOCKED::")) {
+      return NextResponse.json({ error: msg.split("::")[1] }, { status: 409 });
     }
-    return first;
-  });
+    console.error("[/api/reservations POST]", e);
+    return NextResponse.json({ error: "예약 처리에 실패했습니다." }, { status: 500 });
+  }
 
   // 확인 이메일 발송 (설정된 경우)
   if (user?.emailNotify && user.email) {
