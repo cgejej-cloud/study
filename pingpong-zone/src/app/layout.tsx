@@ -44,9 +44,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-green-700 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg"
+        >
+          본문으로 건너뛰기
+        </a>
         <Providers>
           <Header />
-          <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 animate-fade-in">
+          <main id="main-content" className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 animate-fade-in">
             {children}
           </main>
         </Providers>
