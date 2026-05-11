@@ -7,5 +7,7 @@ export async function GET() {
     orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
     take: 10,
   });
-  return NextResponse.json(notices);
+  return NextResponse.json(notices, {
+    headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=120" },
+  });
 }

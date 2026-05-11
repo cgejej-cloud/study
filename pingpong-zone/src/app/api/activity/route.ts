@@ -25,7 +25,8 @@ export async function GET() {
         winnerScore: m.winnerId === m.player1Id ? m.p1Score : m.p2Score,
         loserScore:  m.winnerId === m.player1Id ? m.p2Score : m.p1Score,
         confirmedAt: m.confirmedAt,
-      }))
+      })),
+      { headers: { "Cache-Control": "s-maxage=30, stale-while-revalidate=60" } }
     );
   } catch (e) {
     console.error("[/api/activity]", e);
