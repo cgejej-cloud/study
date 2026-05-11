@@ -1,9 +1,13 @@
 import Link from "next/link";
 import TodayStatus from "@/components/TodayStatus";
+import NoticeBanner from "@/components/NoticeBanner";
 
 export default function HomePage() {
   return (
     <div className="space-y-8">
+      {/* ── 공지 배너 ────────────────────────────────────────── */}
+      <NoticeBanner />
+
       {/* ── 히어로 ──────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-green-700 to-green-900 rounded-2xl px-8 py-14 text-center text-white shadow-lg">
         <div className="absolute inset-0 opacity-10 pointer-events-none"

@@ -102,12 +102,20 @@ export default function MyPage() {
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">마이페이지</h1>
-        <Link
-          href="/mypage/edit"
-          className="text-sm font-medium text-green-700 border border-green-200 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors"
-        >
-          내 정보 수정
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/mypage/matches"
+            className="text-sm font-medium text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            경기 전적
+          </Link>
+          <Link
+            href="/mypage/edit"
+            className="text-sm font-medium text-green-700 border border-green-200 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            내 정보 수정
+          </Link>
+        </div>
       </div>
 
       {/* ── 확인 대기 중인 경기 ─────────────────────────────── */}

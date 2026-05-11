@@ -106,6 +106,8 @@ export default function ReservePage() {
   const [selectedTable, setSelectedTable] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
+  const [recurring, setRecurring] = useState(false);
+  const [recurWeeks, setRecurWeeks] = useState(4);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -151,7 +153,10 @@ export default function ReservePage() {
     const res = await fetch("/api/reservations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tableId: selectedTable, date: selectedDate, startTime: selectedTime, endTime }),
+      body: JSON.stringify({
+        tableId: selectedTable, date: selectedDate, startTime: selectedTime, endTime,
+        recurring: recurring ? { weeks: recurWeeks } : null,
+      }),
     });
 
     setLoading(false);
@@ -261,6 +266,36 @@ export default function ReservePage() {
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 inline-block" /> 예약됨</span>
               <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-200 inline-block" /> 이용불가</span>
             </div>
+          </div>
+        )}
+
+        {/* 정기 예약 */}
+        {selectedTable && selectedDate && selectedTime && (
+          <div className="border border-gray-100 rounded-xl p-4 bg-gray-50 space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={recurring}
+                onChange={(e) => setRecurring(e.target.checked)}
+                className="w-4 h-4 accent-green-600 rounded"
+              />
+              <span className="text-sm font-semibold text-gray-700">매주 같은 요일·시간 반복 예약</span>
+            </label>
+            {recurring && (
+              <div className="flex items-center gap-3 pl-7">
+                <span className="text-sm text-gray-600">총</span>
+                <select
+                  value={recurWeeks}
+                  onChange={(e) => setRecurWeeks(Number(e.target.value))}
+                  className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  {[2, 3, 4, 6, 8, 12].map((w) => (
+                    <option key={w} value={w}>{w}주</option>
+                  ))}
+                </select>
+                <span className="text-sm text-gray-600">동안 반복</span>
+              </div>
+            )}
           </div>
         )}
 

@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { sendMatchPendingNotice } from "@/lib/email";
 
-// 자동 승인 기준 시간 (24시간)
 const AUTO_CONFIRM_HOURS = 24;
 
-// 24시간이 지난 pending 경기를 자동 승인 처리
 export async function autoConfirmExpired() {
   const cutoff = new Date(Date.now() - AUTO_CONFIRM_HOURS * 60 * 60 * 1000);
   const expired = await prisma.match.findMany({
@@ -14,74 +13,113 @@ export async function autoConfirmExpired() {
 
   for (const match of expired) {
     if (match.p1EloChange === null || match.p2EloChange === null) continue;
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: match.player1Id },
-        data:  { eloRating: { increment: match.p1EloChange } },
-      }),
-      prisma.user.update({
-        where: { id: match.player2Id },
-        data:  { eloRating: { increment: match.p2EloChange } },
-      }),
-      prisma.match.update({
-        where: { id: match.id },
-        data:  { status: "confirmed", confirmedAt: new Date() },
-      }),
-    ]);
+    await applyElo(match.id, match.player1Id, match.p1EloChange, match.player2Id, match.p2EloChange);
   }
+}
+
+async function applyElo(
+  matchId: string,
+  p1Id: string, p1Change: number,
+  p2Id: string, p2Change: number,
+) {
+  const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: p1Id }, data: { eloRating: { increment: p1Change } } }),
+    prisma.user.update({ where: { id: p2Id }, data: { eloRating: { increment: p2Change } } }),
+    prisma.match.update({
+      where: { id: matchId },
+      data:  { status: "confirmed", confirmedAt: new Date(), seasonId: activeSeason?.id ?? null },
+    }),
+  ]);
+}
+
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getSession();
+  if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+
+  const { id } = await params;
+  const match = await prisma.match.findUnique({
+    where: { id },
+    include: {
+      player1: { select: { id: true, name: true, eloRating: true } },
+      player2: { select: { id: true, name: true, eloRating: true } },
+      winner:  { select: { id: true, name: true } },
+      season:  { select: { id: true, name: true } },
+    },
+  });
+  if (!match) return NextResponse.json({ error: "없음" }, { status: 404 });
+  return NextResponse.json(match);
 }
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
   const { id } = await params;
-  const { action } = await req.json(); // "confirm" | "dispute"
+  const { action } = await req.json(); // confirm | dispute | void (admin)
 
-  const match = await prisma.match.findUnique({ where: { id } });
+  const match = await prisma.match.findUnique({
+    where: { id },
+    include: { player2: { select: { email: true, emailNotify: true, name: true } } },
+  });
   if (!match) return NextResponse.json({ error: "경기를 찾을 수 없습니다." }, { status: 404 });
+
+  // void는 관리자가 disputed 경기를 완전 무효화
+  if (action === "void") {
+    if (session.role !== "admin") return NextResponse.json({ error: "권한 없음" }, { status: 403 });
+    await prisma.match.update({ where: { id }, data: { status: "voided" } });
+    return NextResponse.json({ status: "voided" });
+  }
+
+  // admin-confirm: 관리자가 disputed 경기를 강제 승인
+  if (action === "admin-confirm") {
+    if (session.role !== "admin") return NextResponse.json({ error: "권한 없음" }, { status: 403 });
+    if (match.p1EloChange === null || match.p2EloChange === null) {
+      return NextResponse.json({ error: "ELO 변동값이 없습니다." }, { status: 400 });
+    }
+    await applyElo(id, match.player1Id, match.p1EloChange, match.player2Id, match.p2EloChange);
+    return NextResponse.json({ status: "confirmed" });
+  }
+
   if (match.status !== "pending") {
     return NextResponse.json({ error: "이미 처리된 경기입니다." }, { status: 400 });
   }
 
-  // 확인/거절 권한: 상대방(player2)만 가능. 관리자도 처리 가능.
   if (match.player2Id !== session.id && session.role !== "admin") {
     return NextResponse.json({ error: "권한이 없습니다." }, { status: 403 });
   }
 
   if (action === "confirm") {
-    // ELO 적용 + 상태 변경
     if (match.p1EloChange === null || match.p2EloChange === null) {
-      return NextResponse.json({ error: "ELO 변동값이 없습니다." }, { status: 400 });
+      return NextResponse.json({ error: "포인트 변동값이 없습니다." }, { status: 400 });
     }
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: match.player1Id },
-        data:  { eloRating: { increment: match.p1EloChange } },
-      }),
-      prisma.user.update({
-        where: { id: match.player2Id },
-        data:  { eloRating: { increment: match.p2EloChange } },
-      }),
-      prisma.match.update({
-        where: { id },
-        data:  { status: "confirmed", confirmedAt: new Date() },
-      }),
-    ]);
+    await applyElo(id, match.player1Id, match.p1EloChange, match.player2Id, match.p2EloChange);
     return NextResponse.json({ status: "confirmed" });
   }
 
   if (action === "dispute") {
-    // ELO 미적용 상태에서 disputed로 변경 (관리자 검토 필요)
-    await prisma.match.update({
-      where: { id },
-      data:  { status: "disputed" },
-    });
+    await prisma.match.update({ where: { id }, data: { status: "disputed" } });
     return NextResponse.json({ status: "disputed" });
   }
 
-  return NextResponse.json({ error: "올바르지 않은 action입니다." }, { status: 400 });
+  return NextResponse.json({ error: "올바르지 않은 action" }, { status: 400 });
+}
+
+// POST: 경기 기록 직후 상대에게 이메일 발송 (matches/route.ts에서 호출)
+export async function notifyOpponent(opts: {
+  opponentEmail: string;
+  opponentEmailNotify: boolean;
+  opponentName: string;
+  recorderName: string;
+  iWon: boolean;
+}) {
+  if (!opts.opponentEmailNotify) return;
+  await sendMatchPendingNotice({
+    to: opts.opponentEmail,
+    opponentName: opts.recorderName,
+    result: opts.iWon ? "loss" : "win",
+  }).catch(() => {});
 }

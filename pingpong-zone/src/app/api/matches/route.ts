@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { notifyOpponent } from "@/app/api/matches/[id]/route";
 
 const PLACEMENT_GAMES = 5;
 const K_PLACEMENT = 48;
@@ -142,8 +143,8 @@ export async function POST(req: NextRequest) {
   // ── ELO 미리 계산 (상대 확인 후 적용) ───────────────────────
 
   const [me, opponent, myGames, oppGames] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.id } }),
-    prisma.user.findUnique({ where: { id: opponentId } }),
+    prisma.user.findUnique({ where: { id: session.id }, select: { id: true, eloRating: true, name: true, email: true, emailNotify: true } }),
+    prisma.user.findUnique({ where: { id: opponentId }, select: { id: true, eloRating: true, name: true, email: true, emailNotify: true } }),
     getConfirmedGameCount(session.id),
     getConfirmedGameCount(opponentId),
   ]);
@@ -183,6 +184,17 @@ export async function POST(req: NextRequest) {
       winner:  { select: { id: true, name: true } },
     },
   });
+
+  // 상대방에게 이메일 알림
+  if (opponent.email) {
+    notifyOpponent({
+      opponentEmail: opponent.email,
+      opponentEmailNotify: opponent.emailNotify,
+      opponentName: opponent.name,
+      recorderName: me.name,
+      iWon,
+    });
+  }
 
   return NextResponse.json({
     match,

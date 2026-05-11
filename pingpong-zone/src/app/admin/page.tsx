@@ -61,6 +61,22 @@ export default function AdminPage() {
           <div className="text-3xl mb-1">🏓</div>
           <div className="font-semibold text-gray-700">탁구대 관리</div>
         </Link>
+        <Link href="/admin/notices" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+          <div className="text-3xl mb-1">📢</div>
+          <div className="font-semibold text-gray-700">공지사항</div>
+        </Link>
+        <Link href="/admin/seasons" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+          <div className="text-3xl mb-1">🏆</div>
+          <div className="font-semibold text-gray-700">시즌 관리</div>
+        </Link>
+        <Link href="/admin/disputes" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+          <div className="text-3xl mb-1">⚖️</div>
+          <div className="font-semibold text-gray-700">분쟁 경기</div>
+        </Link>
+        <Link href="/admin/stats" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+          <div className="text-3xl mb-1">📊</div>
+          <div className="font-semibold text-gray-700">이용 통계</div>
+        </Link>
         <div className="bg-white rounded-xl shadow p-5 text-center">
           <div className="text-3xl font-bold text-green-700">{confirmed.length}</div>
           <div className="text-gray-500 mt-1 text-sm">선택 날짜 예약</div>

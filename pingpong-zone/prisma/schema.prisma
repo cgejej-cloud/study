@@ -8,18 +8,20 @@ datasource db {
 }
 
 model User {
-  id               String        @id @default(cuid())
+  id               String            @id @default(cuid())
   name             String
-  email            String        @unique
+  email            String            @unique
   password         String?
   phone            String?
-  role             String        @default("user")
-  eloRating        Int           @default(1000)
-  createdAt        DateTime      @default(now())
+  role             String            @default("user")
+  eloRating        Int               @default(1000)
+  emailNotify      Boolean           @default(true)
+  createdAt        DateTime          @default(now())
   reservations     Reservation[]
-  matchesAsPlayer1 Match[]       @relation("Player1Matches")
-  matchesAsPlayer2 Match[]       @relation("Player2Matches")
-  matchesWon       Match[]       @relation("WonMatches")
+  matchesAsPlayer1 Match[]           @relation("Player1Matches")
+  matchesAsPlayer2 Match[]           @relation("Player2Matches")
+  matchesWon       Match[]           @relation("WonMatches")
+  seasonSnapshots  SeasonSnapshot[]
 }
 
 model Table {
@@ -43,16 +45,22 @@ model BlockedSlot {
 }
 
 model Reservation {
-  id        String   @id @default(cuid())
-  userId    String
-  tableId   String
-  date      String
-  startTime String
-  endTime   String
-  status    String   @default("confirmed")
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  table     Table    @relation(fields: [tableId], references: [id])
+  id             String        @id @default(cuid())
+  userId         String
+  tableId        String
+  date           String
+  startTime      String
+  endTime        String
+  status         String        @default("confirmed")
+  isRecurring    Boolean       @default(false)
+  recurrenceEnd  String?
+  parentId       String?
+  reminderSent   Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  user           User          @relation(fields: [userId], references: [id])
+  table          Table         @relation(fields: [tableId], references: [id])
+  parent         Reservation?  @relation("RecurringGroup", fields: [parentId], references: [id])
+  children       Reservation[] @relation("RecurringGroup")
 }
 
 model Match {
@@ -60,13 +68,48 @@ model Match {
   player1Id   String
   player2Id   String
   winnerId    String
-  // pending: ELO 미적용, 상대 확인 대기 | confirmed: ELO 적용 완료 | disputed: 상대가 이의제기
   status      String    @default("confirmed")
   p1EloChange Int?
   p2EloChange Int?
   confirmedAt DateTime?
+  seasonId    String?
   createdAt   DateTime  @default(now())
   player1     User      @relation("Player1Matches", fields: [player1Id], references: [id])
   player2     User      @relation("Player2Matches", fields: [player2Id], references: [id])
   winner      User      @relation("WonMatches", fields: [winnerId], references: [id])
+  season      Season?   @relation(fields: [seasonId], references: [id])
+}
+
+model Notice {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  isPinned  Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Season {
+  id        String           @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime?
+  isActive  Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  matches   Match[]
+  snapshots SeasonSnapshot[]
+}
+
+model SeasonSnapshot {
+  id       String @id @default(cuid())
+  userId   String
+  seasonId String
+  rating   Int
+  rank     Int?
+  wins     Int    @default(0)
+  losses   Int    @default(0)
+  user     User   @relation(fields: [userId], references: [id])
+  season   Season @relation(fields: [seasonId], references: [id])
+
+  @@unique([userId, seasonId])
 }
