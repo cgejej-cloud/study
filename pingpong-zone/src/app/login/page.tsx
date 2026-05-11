@@ -11,6 +11,7 @@ function LoginForm() {
   const next = params.get("next") || "/";
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,14 +57,24 @@ function LoginForm() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">비밀번호</label>
-            <input
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              placeholder="••••••••"
-              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
+            <div className="relative">
+              <input
+                name="password"
+                type={showPw ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                placeholder="••••••••"
+                className="w-full border border-gray-300 rounded-lg pl-3.5 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm px-2 py-1"
+              >
+                {showPw ? "🙈" : "👁"}
+              </button>
+            </div>
           </div>
 
           {error && (
