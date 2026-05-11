@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/components/Toast";
@@ -17,13 +17,13 @@ export default function AdminNoticesPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
-  async function load() {
+  const load = useCallback(async () => {
     const res = await fetch("/api/admin/notices");
     if (res.status === 403) { router.push("/"); return; }
     setNotices(await res.json());
-  }
+  }, [router]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
