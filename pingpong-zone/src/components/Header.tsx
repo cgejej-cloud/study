@@ -30,6 +30,9 @@ export default function Header() {
           <Link href="/reserve" className="hover:underline">
             예약하기
           </Link>
+          <Link href="/ranking" className="hover:underline">
+            랭킹
+          </Link>
           {session === undefined ? (
             <span className="text-green-300 text-xs">...</span>
           ) : session ? (
