@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendUpcomingReservationReminders } from "@/lib/reminders";
 
 export async function GET(req: NextRequest) {
+  // lazy-cron: 60초 쿨다운으로 1시간 이내 예약 리마인더 발송
+  sendUpcomingReservationReminders().catch(() => {});
+
   const { searchParams } = new URL(req.url);
   const date = searchParams.get("date") || new Date().toISOString().split("T")[0];
 
