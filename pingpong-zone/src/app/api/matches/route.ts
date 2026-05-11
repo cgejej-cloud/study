@@ -120,11 +120,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 3. 연속 경기 쿨다운 (30분)
+  // 3. 연속 경기 쿨다운 (30분) — 기록자·상대방 모두 체크
   const cooldownTime = new Date(now.getTime() - COOLDOWN_MINUTES * 60 * 1000);
   const recentMatch = await prisma.match.findFirst({
     where: {
-      player1Id: session.id, // 내가 기록자인 경우만 체크
+      OR: [{ player1Id: session.id }, { player2Id: session.id }],
       createdAt: { gte: cooldownTime },
       status: { not: "disputed" },
     },

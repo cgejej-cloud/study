@@ -53,8 +53,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       sorted.map((u, i) =>
         prisma.seasonSnapshot.upsert({
           where:  { userId_seasonId: { userId: u.id, seasonId: id } },
-          create: { userId: u.id, seasonId: id, rating: u.eloRating, rank: i + 1, ...stats.get(u.id)! },
-          update: { rating: u.eloRating, rank: i + 1, ...stats.get(u.id)! },
+          create: { userId: u.id, seasonId: id, rating: u.eloRating, rank: i + 1, ...(stats.get(u.id) ?? { wins: 0, losses: 0 }) },
+          update: { rating: u.eloRating, rank: i + 1, ...(stats.get(u.id) ?? { wins: 0, losses: 0 }) },
         })
       )
     );

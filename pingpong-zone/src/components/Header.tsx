@@ -28,6 +28,7 @@ export default function Header() {
   async function handleLogout() {
     await fetch("/api/logout", { method: "POST" });
     setSession(null);
+    setPendingCount(0);
     window.location.href = "/";
   }
 

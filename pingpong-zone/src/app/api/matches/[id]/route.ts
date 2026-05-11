@@ -23,13 +23,15 @@ async function applyElo(
   p2Id: string, p2Change: number,
 ) {
   const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
+  // updateMany with status filter is the idempotency gate — prevents double-apply in race conditions
+  const updated = await prisma.match.updateMany({
+    where: { id: matchId, status: { in: ["pending", "disputed"] } },
+    data:  { status: "confirmed", confirmedAt: new Date(), seasonId: activeSeason?.id ?? null },
+  });
+  if (updated.count === 0) return; // already confirmed by another request
   await prisma.$transaction([
     prisma.user.update({ where: { id: p1Id }, data: { eloRating: { increment: p1Change } } }),
     prisma.user.update({ where: { id: p2Id }, data: { eloRating: { increment: p2Change } } }),
-    prisma.match.update({
-      where: { id: matchId },
-      data:  { status: "confirmed", confirmedAt: new Date(), seasonId: activeSeason?.id ?? null },
-    }),
   ]);
 }
 
