@@ -61,14 +61,14 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-green-700 shadow-md">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
         {/* 로고 */}
-        <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg tracking-tight hover:opacity-90 transition-opacity">
+        <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg tracking-tight hover:opacity-90 transition-opacity shrink-0">
           🏓 <span>탁구존</span>
         </Link>
 
         {/* 네비게이션 */}
-        <nav className="flex items-center gap-1">
+        <nav className="flex items-center gap-1 min-w-0">
           {navLink("/reserve", "예약")}
           {navLink("/ranking", "랭킹")}
 
@@ -113,12 +113,14 @@ export default function Header() {
                   )}
                 </Link>
               )}
-              <span className="hidden sm:inline text-green-300 text-sm px-2">{session.name}</span>
+              <span className="hidden md:inline text-green-300 text-sm px-2">{session.name}</span>
               <button
                 onClick={handleLogout}
+                aria-label="로그아웃"
                 className="text-sm font-medium text-green-100 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors ml-1"
               >
-                로그아웃
+                <span className="hidden sm:inline">로그아웃</span>
+                <span className="sm:hidden">↪</span>
               </button>
             </>
           ) : (
