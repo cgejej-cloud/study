@@ -50,38 +50,38 @@ export default function AdminPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">관리자 대시보드</h1>
+      <h1 className="font-extrabold text-[22px] mb-5" style={{ letterSpacing: "-0.03em" }}>🛠 관리자 대시보드</h1>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Link href="/admin/users" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+        <Link href="/admin/users" className="card p-5 text-center hover:opacity-90 transition-opacity">
           <div className="text-3xl mb-1">👥</div>
           <div className="font-semibold text-gray-700">회원 관리</div>
         </Link>
-        <Link href="/admin/tables" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+        <Link href="/admin/tables" className="card p-5 text-center hover:opacity-90 transition-opacity">
           <div className="text-3xl mb-1">🏓</div>
           <div className="font-semibold text-gray-700">탁구대 관리</div>
         </Link>
-        <Link href="/admin/notices" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+        <Link href="/admin/notices" className="card p-5 text-center hover:opacity-90 transition-opacity">
           <div className="text-3xl mb-1">📢</div>
           <div className="font-semibold text-gray-700">공지사항</div>
         </Link>
-        <Link href="/admin/seasons" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+        <Link href="/admin/seasons" className="card p-5 text-center hover:opacity-90 transition-opacity">
           <div className="text-3xl mb-1">🏆</div>
           <div className="font-semibold text-gray-700">시즌 관리</div>
         </Link>
-        <Link href="/admin/disputes" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+        <Link href="/admin/disputes" className="card p-5 text-center hover:opacity-90 transition-opacity">
           <div className="text-3xl mb-1">⚖️</div>
           <div className="font-semibold text-gray-700">분쟁 경기</div>
         </Link>
-        <Link href="/admin/stats" className="bg-white rounded-xl shadow p-5 text-center hover:shadow-md transition">
+        <Link href="/admin/stats" className="card p-5 text-center hover:opacity-90 transition-opacity">
           <div className="text-3xl mb-1">📊</div>
           <div className="font-semibold text-gray-700">이용 통계</div>
         </Link>
-        <div className="bg-white rounded-xl shadow p-5 text-center">
+        <div className="card p-5 text-center">
           <div className="text-3xl font-bold text-green-700">{confirmed.length}</div>
           <div className="text-gray-500 mt-1 text-sm">선택 날짜 예약</div>
         </div>
-        <div className="bg-white rounded-xl shadow p-5 text-center">
+        <div className="card p-5 text-center">
           <div className="text-3xl font-bold text-blue-600">
             {reservations.filter((r) => r.status === "confirmed").length}
           </div>
@@ -119,9 +119,9 @@ export default function AdminPage() {
       ) : filtered.length === 0 ? (
         <p className="text-gray-400">해당 날짜 예약이 없습니다.</p>
       ) : (
-        <div className="bg-white rounded-xl shadow overflow-x-auto">
+        <div className="card overflow-x-auto">
           <table className="w-full text-sm min-w-[640px]">
-            <thead className="bg-gray-50">
+            <thead className="bg-[#f8faf8]">
               <tr>
                 {["탁구대", "시간", "회원명", "이메일", "연락처", "상태", ""].map((h) => (
                   <th key={h} className="px-4 py-3 text-left font-semibold text-gray-600">{h}</th>

@@ -19,13 +19,13 @@ type Stats = {
 };
 
 function getTier(elo: number) {
-  if (elo >= 1400) return { name: "그랜드마스터", icon: "👑", color: "text-yellow-600" };
-  if (elo >= 1300) return { name: "마스터",       icon: "💎", color: "text-purple-600" };
-  if (elo >= 1200) return { name: "다이아",       icon: "💠", color: "text-blue-500" };
-  if (elo >= 1100) return { name: "플래티넘",     icon: "🔷", color: "text-teal-600" };
-  if (elo >= 1000) return { name: "골드",         icon: "🥇", color: "text-amber-500" };
-  if (elo >= 900)  return { name: "실버",         icon: "🥈", color: "text-gray-500" };
-  return                  { name: "브론즈",       icon: "🥉", color: "text-orange-400" };
+  if (elo >= 1400) return { name: "그랜드마스터", icon: "👑", color: "#d97706" };
+  if (elo >= 1300) return { name: "마스터",       icon: "💎", color: "#7c3aed" };
+  if (elo >= 1200) return { name: "다이아",       icon: "💠", color: "#2563eb" };
+  if (elo >= 1100) return { name: "플래티넘",     icon: "🔷", color: "#0d9488" };
+  if (elo >= 1000) return { name: "골드",         icon: "🥇", color: "#d97706" };
+  if (elo >=  900) return { name: "실버",         icon: "🥈", color: "#64748b" };
+  return                  { name: "브론즈",       icon: "🥉", color: "#c2410c" };
 }
 
 export default function MyStatusCard() {
@@ -47,46 +47,71 @@ export default function MyStatusCard() {
   if (!me || !data) return null;
 
   const tier = getTier(data.eloRating);
+  const { stats } = data;
 
   return (
     <Link
       href="/mypage/matches"
-      className="block bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow"
+      className="flex items-center gap-3 rounded-2xl px-4 py-3.5 animate-slide-up"
+      style={{ background: "linear-gradient(120deg, var(--jade-50) 0%, #f0fdf4 100%)", border: "1px solid var(--jade-200)", display: "flex" }}
     >
-      <div className="flex items-center gap-3">
-        <Avatar name={me.name} size="lg" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-bold text-gray-900 truncate">{me.name}</span>
-            <span className={`text-xs font-semibold ${tier.color}`}>{tier.icon} {tier.name}</span>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-gray-600 mt-1">
-            <span><span className="font-bold text-green-700">{data.eloRating}</span> 점</span>
-            <span className="text-gray-300">·</span>
-            <span>{data.stats.wins}승 {data.stats.losses}패</span>
-            {data.stats.winRate !== null && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span>승률 {data.stats.winRate}%</span>
-              </>
-            )}
-            {data.stats.streak && data.stats.streak.count >= 2 && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span className={data.stats.streak.type === "W" ? "text-orange-600 font-semibold" : "text-gray-500"}>
-                  {data.stats.streak.type === "W" ? "🔥" : "❄️"} {data.stats.streak.count}{data.stats.streak.type === "W" ? "연승" : "연패"}
-                </span>
-              </>
-            )}
-          </div>
-          {data.stats.isPlacing && (
-            <p className="text-[11px] text-orange-600 mt-1">
-              🔰 신입 보정 {5 - data.stats.placementLeft}/5 경기 완료
-            </p>
+      <Avatar name={me.name} size="lg" />
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-bold text-[14px] truncate" style={{ color: "var(--text-1)" }}>{me.name}</span>
+          <span
+            className="chip"
+            style={{ background: "var(--jade-100)", color: tier.color, fontSize: "10px" }}
+          >
+            {tier.icon} {tier.name}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap" style={{ fontSize: "12px", color: "var(--text-3)" }}>
+          <span>
+            <span className="font-extrabold text-[15px]" style={{ color: "var(--jade-700)" }}>{data.eloRating}</span>
+            <span className="ml-0.5">점</span>
+          </span>
+          <span style={{ color: "var(--border)" }}>·</span>
+          <span>{stats.wins}승 {stats.losses}패</span>
+          {stats.winRate !== null && (
+            <>
+              <span style={{ color: "var(--border)" }}>·</span>
+              <span>승률 {stats.winRate}%</span>
+            </>
+          )}
+          {stats.streak && stats.streak.count >= 2 && (
+            <span
+              className="chip"
+              style={
+                stats.streak.type === "W"
+                  ? { background: "#fff7ed", color: "#c2410c" }
+                  : { background: "#f1f5f9", color: "#64748b" }
+              }
+            >
+              {stats.streak.type === "W" ? "🔥" : "❄️"} {stats.streak.count}{stats.streak.type === "W" ? "연승" : "연패"}
+            </span>
           )}
         </div>
-        <span className="text-gray-300 text-lg shrink-0">→</span>
+
+        {stats.isPlacing && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="w-3.5 h-1.5 rounded-full"
+                style={{ background: i < stats.total ? "var(--jade-500)" : "var(--jade-100)" }}
+              />
+            ))}
+            <span className="text-[11px] ml-0.5" style={{ color: "#c2410c" }}>
+              신입보정 {stats.total}/5
+            </span>
+          </div>
+        )}
       </div>
+
+      <span className="text-[18px]" style={{ color: "var(--jade-300)" }}>›</span>
     </Link>
   );
 }

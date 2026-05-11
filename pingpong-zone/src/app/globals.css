@@ -1,57 +1,232 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════
+   JADE PIXEL — Design System v1.0
+   귀엽고 컴팩트하며 재밌는 탁구존 UI
+═══════════════════════════════════════════ */
+
+/* ── 토큰 ─────────────────────────────────── */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Brand — Jade */
+  --jade-50:   #f0fdf4;
+  --jade-100:  #dcfce7;
+  --jade-200:  #bbf7d0;
+  --jade-400:  #4ade80;
+  --jade-500:  #22c55e;
+  --jade-600:  #16a34a;
+  --jade-700:  #15803d;
+  --jade-800:  #166534;
+  --jade-900:  #14532d;
+  --jade-950:  #0d3621;
+
+  /* Accent — Sun (warm energy) */
+  --sun-400:   #fbbf24;
+  --sun-500:   #f59e0b;
+
+  /* Accent — Sky (info) */
+  --sky-400:   #38bdf8;
+  --sky-500:   #0ea5e9;
+
+  /* Accent — Rose (loss/error) */
+  --rose-400:  #fb7185;
+  --rose-500:  #f43f5e;
+
+  /* Neutral */
+  --bg:        #f2f7f3;
+  --surface:   #ffffff;
+  --border:    #e4e9e5;
+  --muted:     #9aab9e;
+  --text-1:    #111c14;
+  --text-2:    #3d4f41;
+  --text-3:    #6b7f6e;
 }
 
+/* ── Tailwind v4 테마 등록 ───────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background:  var(--bg);
+  --color-foreground:  var(--text-1);
+
+  --color-jade-50:     var(--jade-50);
+  --color-jade-100:    var(--jade-100);
+  --color-jade-200:    var(--jade-200);
+  --color-jade-400:    var(--jade-400);
+  --color-jade-500:    var(--jade-500);
+  --color-jade-600:    var(--jade-600);
+  --color-jade-700:    var(--jade-700);
+  --color-jade-800:    var(--jade-800);
+  --color-jade-900:    var(--jade-900);
+  --color-jade-950:    var(--jade-950);
+
+  --color-sun-400:     var(--sun-400);
+  --color-sun-500:     var(--sun-500);
+  --color-sky-500:     var(--sky-500);
+  --color-rose-500:    var(--rose-500);
 }
 
+/* ── Base ─────────────────────────────────── */
 html {
   scroll-behavior: smooth;
+  font-size: 14px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--text-1);
   font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
     "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.55;
 }
 
-/* 스크롤바 */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+/* ── 스크롤바 ─────────────────────────────── */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: #c4cfc6; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #9aab9e; }
 
-/* 포커스 아웃라인 통일 */
+/* ── 포커스 ───────────────────────────────── */
 *:focus-visible {
-  outline: 2px solid #15803d;
+  outline: 2px solid var(--jade-500);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
-/* 입력 필드 공통 */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="tel"],
-input[type="date"],
-select,
-textarea {
-  transition: border-color 0.15s, box-shadow 0.15s;
+/* ── 입력 공통 ────────────────────────────── */
+input, select, textarea {
+  transition: border-color 0.12s, box-shadow 0.12s;
 }
 
-/* 애니메이션 */
+/* ═══════════════════════════════════════════
+   UTILITY CLASSES
+═══════════════════════════════════════════ */
+
+/* Card */
+.card {
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 1px 4px rgba(17,28,20,0.06), 0 0 0 1px rgba(17,28,20,0.04);
+}
+.card-sm {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(17,28,20,0.05), 0 0 0 1px rgba(17,28,20,0.04);
+}
+
+/* Primary button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-jade {
+  background: var(--jade-600);
+  color: white;
+}
+.btn-jade:hover { background: var(--jade-700); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
+.btn-jade:active { transform: translateY(0); }
+
+.btn-outline {
+  background: white;
+  color: var(--jade-700);
+  box-shadow: 0 0 0 1.5px var(--jade-200);
+}
+.btn-outline:hover { background: var(--jade-50); box-shadow: 0 0 0 1.5px var(--jade-400); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+}
+.btn-ghost:hover { background: var(--jade-50); color: var(--jade-700); }
+
+/* Chip / Badge */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.chip-jade   { background: var(--jade-100);  color: var(--jade-800); }
+.chip-sun    { background: #fef3c7;           color: #92400e; }
+.chip-sky    { background: #e0f2fe;           color: #075985; }
+.chip-rose   { background: #ffe4e6;           color: #9f1239; }
+.chip-gray   { background: #f1f5f9;           color: #475569; }
+
+/* Section heading */
+.section-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+
+/* ═══════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════ */
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out both;
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.88); }
+  70%  { transform: scale(1.03); }
+  100% { opacity: 1; transform: scale(1); }
 }
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+.animate-fade-in  { animation: fade-in  0.22s ease-out both; }
+.animate-pop-in   { animation: pop-in   0.25s cubic-bezier(0.34,1.56,0.64,1) both; }
+.animate-slide-up { animation: slide-up 0.28s ease-out both; }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, #e8ede9 25%, #f2f6f3 50%, #e8ede9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════
+   TABLE SHARED
+═══════════════════════════════════════════ */
+.pp-table { width: 100%; font-size: 13px; }
+.pp-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+  background: #f8faf8;
+  border-bottom: 1px solid var(--border);
+}
+.pp-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f4f1;
+}
+.pp-table tbody tr:last-child td { border-bottom: none; }
+.pp-table tbody tr:hover td     { background: #f8faf8; }
+.pp-table tbody tr.my-row td    { background: var(--jade-50); }

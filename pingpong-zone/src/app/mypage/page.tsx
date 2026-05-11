@@ -130,17 +130,17 @@ export default function MyPage() {
     <div className="max-w-2xl mx-auto space-y-8">
       {/* 헤더 */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">마이페이지</h1>
+        <h1 className="font-extrabold text-[20px]" style={{ letterSpacing: "-0.03em" }}>마이페이지</h1>
         <div className="flex gap-2">
           <Link
             href="/mypage/matches"
-            className="text-sm font-medium text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors"
+            className="btn btn-outline" style={{ fontSize: "12px" }}
           >
             경기 전적
           </Link>
           <Link
             href="/mypage/edit"
-            className="text-sm font-medium text-green-700 border border-green-200 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors"
+            className="btn btn-jade" style={{ fontSize: "12px" }}
           >
             내 정보 수정
           </Link>
@@ -151,12 +151,12 @@ export default function MyPage() {
       {!loading && pendingMatches.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-base font-semibold text-gray-800">경기 확인 요청</h2>
+            <h2 className="font-bold text-[14px]" style={{ color: "var(--text-1)" }}>경기 확인 요청</h2>
             <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
               {pendingMatches.length}
             </span>
           </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-xl divide-y divide-orange-100">
+          <div className="rounded-2xl divide-y overflow-hidden" style={{ background: "#fff7ed", border: "1px solid #fed7aa" }}>
             {pendingMatches.map((m) => {
               const iWonInMatch = m.winnerId === myId;
               const myEloChange = m.p2EloChange; // 나는 player2

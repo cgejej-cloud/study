@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Notice = { id: string; title: string; content: string; isPinned: boolean };
+type Notice = { id: string; title: string; body: string; isPinned: boolean };
 
 export default function NoticeBanner() {
   const [notices, setNotices] = useState<Notice[]>([]);
@@ -10,30 +10,34 @@ export default function NoticeBanner() {
   useEffect(() => {
     fetch("/api/notices")
       .then((r) => r.ok ? r.json() : [])
-      .then((data) => setNotices(Array.isArray(data) ? data : []));
+      .then((d) => setNotices(Array.isArray(d) ? d.slice(0, 2) : []))
+      .catch(() => {});
   }, []);
 
   if (notices.length === 0) return null;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 animate-slide-up">
       {notices.map((n) => (
         <div
           key={n.id}
-          className={`rounded-xl px-4 py-3 flex items-start gap-3 ${
+          className="flex items-start gap-2.5 px-4 py-3 rounded-2xl text-[13px]"
+          style={
             n.isPinned
-              ? "bg-amber-50 border border-amber-200"
-              : "bg-blue-50 border border-blue-100"
-          }`}
+              ? { background: "#fffbeb", border: "1px solid #fde68a" }
+              : { background: "#eff6ff", border: "1px solid #bfdbfe" }
+          }
         >
-          <span className="text-lg shrink-0">{n.isPinned ? "📌" : "📢"}</span>
+          <span className="text-base shrink-0 mt-0.5">{n.isPinned ? "📌" : "📢"}</span>
           <div className="min-w-0">
-            <p className={`text-sm font-semibold ${n.isPinned ? "text-amber-800" : "text-blue-800"}`}>
+            <span className="font-bold" style={{ color: n.isPinned ? "#92400e" : "#1d4ed8" }}>
               {n.title}
-            </p>
-            <p className={`text-xs mt-0.5 line-clamp-2 ${n.isPinned ? "text-amber-700" : "text-blue-600"}`}>
-              {n.content}
-            </p>
+            </span>
+            {n.body && (
+              <span className="ml-2" style={{ color: n.isPinned ? "#78350f" : "#1e40af" }}>
+                {n.body}
+              </span>
+            )}
           </div>
         </div>
       ))}

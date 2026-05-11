@@ -30,71 +30,56 @@ function LoginForm() {
     }
   }
 
+  const inputCls = "w-full rounded-xl px-3.5 py-2.5 text-[13px] focus:outline-none transition-shadow";
+  const inputStyle = { border: "1.5px solid var(--border)", background: "white" };
+
   return (
-    <div className="max-w-sm mx-auto mt-8">
-      <div className="text-center mb-8">
-        <Link href="/" className="inline-block text-3xl font-extrabold text-green-700 tracking-tight">
+    <div className="max-w-sm mx-auto mt-10">
+      <div className="text-center mb-6">
+        <Link href="/" className="inline-block font-extrabold text-[26px]" style={{ color: "var(--jade-950)", letterSpacing: "-0.03em" }}>
           🏓 탁구존
         </Link>
-        <p className="text-gray-500 text-sm mt-1">계정에 로그인하세요</p>
+        <p className="text-[13px] mt-1" style={{ color: "var(--text-3)" }}>계정에 로그인하세요</p>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-8">
-        <h1 className="text-xl font-bold text-gray-900 mb-6">로그인</h1>
+      <div className="card p-7">
+        <h1 className="font-extrabold text-[18px] mb-5" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>로그인</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">이메일</label>
-            <input
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="email@example.com"
-              className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
+            <label className="block text-[12px] font-bold mb-1.5" style={{ color: "var(--text-2)" }}>이메일</label>
+            <input name="email" type="email" required autoComplete="email" placeholder="email@example.com"
+              className={inputCls} style={inputStyle} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">비밀번호</label>
+            <label className="block text-[12px] font-bold mb-1.5" style={{ color: "var(--text-2)" }}>비밀번호</label>
             <div className="relative">
-              <input
-                name="password"
-                type={showPw ? "text" : "password"}
-                required
-                autoComplete="current-password"
-                placeholder="••••••••"
-                className="w-full border border-gray-300 rounded-lg pl-3.5 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw((v) => !v)}
-                aria-label={showPw ? "비밀번호 숨기기" : "비밀번호 보기"}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm px-2 py-1"
-              >
+              <input name="password" type={showPw ? "text" : "password"} required autoComplete="current-password" placeholder="••••••••"
+                className={inputCls} style={{ ...inputStyle, paddingRight: "44px" }} />
+              <button type="button" onClick={() => setShowPw(v => !v)} aria-label={showPw ? "숨기기" : "보기"}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--muted)" }}>
                 {showPw ? "🙈" : "👁"}
               </button>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-3.5 py-2.5 text-sm text-red-600">
+            <div className="rounded-xl px-3.5 py-2.5 text-[12px]" style={{ background: "#fff1f2", border: "1px solid #fecdd3", color: "#be123c" }}>
               {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-green-700 text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-green-600 disabled:opacity-50 transition-colors mt-2"
-          >
+          <button type="submit" disabled={loading}
+            className="w-full py-2.5 rounded-xl font-bold text-[13px] transition-all mt-1"
+            style={{ background: "var(--jade-950)", color: "white", opacity: loading ? 0.6 : 1 }}>
             {loading ? "로그인 중..." : "로그인"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-5">
+        <p className="text-center text-[12px] mt-5" style={{ color: "var(--text-3)" }}>
           계정이 없으신가요?{" "}
-          <Link href="/register" className="text-green-700 font-semibold hover:underline">
+          <Link href="/register" className="font-bold hover:underline" style={{ color: "var(--jade-700)" }}>
             회원가입
           </Link>
         </p>
@@ -105,7 +90,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="max-w-sm mx-auto mt-8 text-center text-gray-400">불러오는 중...</div>}>
+    <Suspense fallback={<div className="max-w-sm mx-auto mt-10 text-center text-[13px]" style={{ color: "var(--text-3)" }}>불러오는 중...</div>}>
       <LoginForm />
     </Suspense>
   );

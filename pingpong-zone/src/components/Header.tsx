@@ -7,6 +7,21 @@ import type { SessionPayload } from "@/lib/session";
 import NotificationBell from "@/components/NotificationBell";
 import GlobalSearch from "@/components/GlobalSearch";
 
+function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
+  const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`relative text-[13px] font-semibold px-3 py-1.5 rounded-full transition-all ${
+        active ? "bg-white/15 text-white" : "text-white/70 hover:text-white hover:bg-white/10"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
 export default function Header() {
   const pathname = usePathname();
   const [session, setSession] = useState<SessionPayload | null | undefined>(undefined);
@@ -42,82 +57,84 @@ export default function Header() {
     window.location.href = "/";
   }
 
-  const navLink = (href: string, label: string) => {
-    const active = pathname === href || (href !== "/" && pathname.startsWith(href));
-    return (
-      <Link
-        href={href}
-        aria-current={active ? "page" : undefined}
-        className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
-          active
-            ? "bg-white/20 text-white"
-            : "text-green-100 hover:text-white hover:bg-white/10"
-        }`}
-      >
-        {label}
-      </Link>
-    );
-  };
-
   return (
-    <header className="sticky top-0 z-50 bg-green-700 shadow-md">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
+    <header className="sticky top-0 z-50" style={{ background: "var(--jade-950)" }}>
+      {/* 메인 바 */}
+      <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between gap-2">
         {/* 로고 */}
-        <Link href="/" className="flex items-center gap-2 text-white font-bold text-lg tracking-tight hover:opacity-90 transition-opacity shrink-0">
-          🏓 <span>탁구존</span>
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 shrink-0 group"
+        >
+          <span className="text-xl leading-none group-hover:animate-pop-in">🏓</span>
+          <span
+            className="font-extrabold text-[15px] tracking-tight"
+            style={{ color: "white", letterSpacing: "-0.03em" }}
+          >
+            탁구존
+          </span>
         </Link>
 
         {/* 네비게이션 */}
-        <nav className="flex items-center gap-1 min-w-0">
-          {navLink("/reserve", "예약")}
-          {navLink("/ranking", "랭킹")}
+        <nav className="flex items-center gap-0.5 min-w-0">
+          <NavLink href="/reserve" label="예약" pathname={pathname} />
+          <NavLink href="/ranking" label="랭킹" pathname={pathname} />
 
           {session === undefined ? (
-            <span className="w-6 h-6 rounded-full bg-green-600 animate-pulse ml-2" />
+            <span className="w-5 h-5 rounded-full bg-white/10 animate-pulse ml-2" />
           ) : session ? (
             <>
               <GlobalSearch />
               <NotificationBell />
+
+              {/* 마이페이지 */}
               <Link
                 href="/mypage"
                 aria-current={pathname.startsWith("/mypage") ? "page" : undefined}
-                className={`relative text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                className={`relative text-[13px] font-semibold px-3 py-1.5 rounded-full transition-all ${
                   pathname.startsWith("/mypage")
-                    ? "bg-white/20 text-white"
-                    : "text-green-100 hover:text-white hover:bg-white/10"
+                    ? "bg-white/15 text-white"
+                    : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
                 마이페이지
                 {pendingCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
                     {pendingCount}
                   </span>
                 )}
               </Link>
-              {/* admin link */}
+
+              {/* 관리자 */}
               {session.role === "admin" && (
                 <Link
                   href="/admin"
                   aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-                  className={`relative text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`relative text-[13px] font-semibold px-3 py-1.5 rounded-full transition-all ${
                     pathname.startsWith("/admin")
-                      ? "bg-white/20 text-white"
-                      : "text-green-100 hover:text-white hover:bg-white/10"
+                      ? "bg-white/15 text-white"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
                   }`}
                 >
-                  관리
+                  관리자
                   {disputeCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                    <span className="absolute -top-0.5 -right-0.5 bg-orange-400 text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
                       {disputeCount}
                     </span>
                   )}
                 </Link>
               )}
-              <span className="hidden md:inline text-green-300 text-sm px-2">{session.name}</span>
+
+              {/* 유저명 */}
+              <span className="hidden lg:inline text-white/50 text-[12px] px-2">
+                {session.name}
+              </span>
+
+              {/* 로그아웃 */}
               <button
                 onClick={handleLogout}
                 aria-label="로그아웃"
-                className="text-sm font-medium text-green-100 hover:text-white bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors ml-1"
+                className="text-[13px] font-semibold text-white/60 hover:text-white px-2 py-1.5 rounded-full hover:bg-white/10 transition-all ml-0.5"
               >
                 <span className="hidden sm:inline">로그아웃</span>
                 <span className="sm:hidden">↪</span>
@@ -125,10 +142,11 @@ export default function Header() {
             </>
           ) : (
             <>
-              {navLink("/login", "로그인")}
+              <NavLink href="/login" label="로그인" pathname={pathname} />
               <Link
                 href="/register"
-                className="text-sm font-semibold bg-white text-green-700 hover:bg-green-50 px-3 py-1.5 rounded-lg transition-colors ml-1"
+                className="ml-1 text-[13px] font-bold px-3.5 py-1.5 rounded-full transition-all"
+                style={{ background: "var(--jade-500)", color: "white" }}
               >
                 회원가입
               </Link>
@@ -136,6 +154,9 @@ export default function Header() {
           )}
         </nav>
       </div>
+
+      {/* 하단 포인트 라인 */}
+      <div className="h-px" style={{ background: "linear-gradient(90deg, var(--jade-800) 0%, var(--jade-500) 50%, var(--jade-800) 100%)" }} />
     </header>
   );
 }

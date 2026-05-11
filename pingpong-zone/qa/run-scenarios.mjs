@@ -199,7 +199,7 @@ async function login(page, email, password) {
   await page.goto(`${BASE}/ranking`, { waitUntil: "networkidle" });
   await shot(s, page, "랭킹_정렬_검색");
 
-  await page.click('a:has-text("경기 결과 기록")');
+  await page.click('a:has-text("경기 기록")');
   await page.waitForLoadState("networkidle");
   await shot(s, page, "기록_초기_상대선택");
 
