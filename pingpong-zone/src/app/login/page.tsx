@@ -25,8 +25,7 @@ function LoginForm() {
     if (result?.error) {
       setError(result.error);
     } else {
-      router.push(safeNext);
-      router.refresh();
+      window.location.href = safeNext;
     }
   }
 
