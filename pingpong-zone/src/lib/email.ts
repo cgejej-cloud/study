@@ -73,3 +73,16 @@ export async function sendMatchPendingNotice(opts: {
      <a href="${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/mypage">마이페이지 바로가기</a>`
   );
 }
+
+export async function sendPasswordResetEmail(to: string, name: string, token: string) {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const link = `${BASE_URL}/reset-password?token=${token}`;
+  await sendEmail(
+    to,
+    "[탁구존] 비밀번호 재설정",
+    `<p>${name}님, 비밀번호 재설정을 요청하셨습니다.</p>
+     <p>아래 링크를 클릭하여 비밀번호를 재설정해 주세요. 링크는 1시간 후 만료됩니다.</p>
+     <p><a href="${link}">${link}</a></p>
+     <p>본인이 요청하지 않으셨다면 이 이메일을 무시하세요.</p>`
+  );
+}

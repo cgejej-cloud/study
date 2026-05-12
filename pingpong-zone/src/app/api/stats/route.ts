@@ -27,6 +27,7 @@ export async function GET() {
     tableGroups,
     dateGroups,
     tables,
+    heatmapRaw,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.reservation.count({ where: { date: todayStr, status: "confirmed" } }),
@@ -50,6 +51,11 @@ export async function GET() {
       _count: { _all: true },
     }),
     prisma.table.findMany({ select: { id: true, name: true } }),
+    prisma.reservation.groupBy({
+      by: ["date", "startTime"],
+      where: { status: "confirmed" },
+      _count: { _all: true },
+    }),
   ]);
 
   // 시간대별 예약 집계 (09~21)
@@ -91,11 +97,21 @@ export async function GET() {
     trend.push({ date: ds, count: daysMap.get(ds) ?? 0 });
   }
 
+  // 피크 타임 히트맵: dow(0~6) × hour(09~21) 2D matrix
+  const HEATMAP_HOURS = ["09","10","11","12","13","14","15","16","17","18","19","20","21"];
+  const heatmap: number[][] = Array.from({ length: 7 }, () => Array(HEATMAP_HOURS.length).fill(0));
+  for (const row of heatmapRaw) {
+    const dow = new Date(row.date + "T00:00:00").getDay();
+    const hourIdx = HEATMAP_HOURS.indexOf(row.startTime.slice(0, 2));
+    if (hourIdx !== -1) heatmap[dow][hourIdx] += row._count._all;
+  }
+
   return NextResponse.json({
     summary: { totalUsers, todayRes, weekRes, monthRes, totalMatches, disputedCount },
     hourStats: HOURS.map(h => ({ hour: `${h}시`, count: hourCounts[h] })),
     tableStats,
     dowStats,
     trend,
+    heatmap: { matrix: heatmap, hours: HEATMAP_HOURS.map(h => `${h}시`), dow: DOW_LABELS },
   });
 }

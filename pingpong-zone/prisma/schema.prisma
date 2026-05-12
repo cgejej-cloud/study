@@ -9,20 +9,25 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(cuid())
-  name             String
-  email            String            @unique
-  password         String?
-  phone            String?
-  role             String            @default("user")
-  eloRating        Int               @default(1000)
-  emailNotify      Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  reservations     Reservation[]
-  matchesAsPlayer1 Match[]           @relation("Player1Matches")
-  matchesAsPlayer2 Match[]           @relation("Player2Matches")
-  matchesWon       Match[]           @relation("WonMatches")
-  seasonSnapshots  SeasonSnapshot[]
+  id                  String               @id @default(cuid())
+  name                String
+  email               String               @unique
+  password            String?
+  phone               String?
+  role                String               @default("user")
+  eloRating           Int                  @default(1000)
+  emailNotify         Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  reservations        Reservation[]
+  matchesAsPlayer1    Match[]              @relation("Player1Matches")
+  matchesAsPlayer2    Match[]              @relation("Player2Matches")
+  matchesWon          Match[]              @relation("WonMatches")
+  seasonSnapshots     SeasonSnapshot[]
+  passwordResetTokens PasswordResetToken[]
+  tournamentPlayers   TournamentPlayer[]
+  tmMatchesAsP1       TournamentMatch[]    @relation("TM_Player1")
+  tmMatchesAsP2       TournamentMatch[]    @relation("TM_Player2")
+  tmMatchesWon        TournamentMatch[]    @relation("TM_Winner")
 }
 
 model Table {
@@ -129,4 +134,73 @@ model SeasonSnapshot {
   season   Season @relation(fields: [seasonId], references: [id])
 
   @@unique([userId, seasonId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([token])
+  @@index([userId])
+}
+
+model Tournament {
+  id          String             @id @default(cuid())
+  name        String
+  description String?
+  status      String             @default("open")
+  maxPlayers  Int                @default(8)
+  createdAt   DateTime           @default(now())
+  players     TournamentPlayer[]
+  matches     TournamentMatch[]
+
+  @@index([status, createdAt])
+}
+
+model TournamentPlayer {
+  id           String     @id @default(cuid())
+  tournamentId String
+  userId       String
+  seed         Int?
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId])
+}
+
+model TournamentMatch {
+  id           String     @id @default(cuid())
+  tournamentId String
+  round        Int
+  position     Int
+  player1Id    String?
+  player2Id    String?
+  winnerId     String?
+  p1Score      Int?
+  p2Score      Int?
+  status       String     @default("pending")
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  player1      User?      @relation("TM_Player1", fields: [player1Id], references: [id])
+  player2      User?      @relation("TM_Player2", fields: [player2Id], references: [id])
+  winner       User?      @relation("TM_Winner", fields: [winnerId], references: [id])
+
+  @@index([tournamentId, round])
+}
+
+model ErrorLog {
+  id        String   @id @default(cuid())
+  message   String
+  stack     String?
+  url       String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }

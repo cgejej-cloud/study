@@ -22,15 +22,42 @@ export default function DisputesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [autoVoiding, setAutoVoiding] = useState(false);
+  const [expiredCount, setExpiredCount] = useState(0);
 
   useEffect(() => {
     (async () => {
-      const res = await fetch("/api/admin/disputes");
-      if (res.status === 401 || res.status === 403) { router.push("/"); return; }
-      if (res.ok) setMatches(await res.json());
+      const [disputeRes, expiredRes] = await Promise.all([
+        fetch("/api/admin/disputes"),
+        fetch("/api/admin/auto-void-disputes"),
+      ]);
+      if (disputeRes.status === 401 || disputeRes.status === 403) { router.push("/"); return; }
+      if (disputeRes.ok) setMatches(await disputeRes.json());
+      if (expiredRes.ok) {
+        const d = await expiredRes.json();
+        setExpiredCount(d.expiredCount ?? 0);
+      }
       setLoading(false);
     })();
   }, [router]);
+
+  async function autoVoid() {
+    if (!confirm(`7일 이상 경과된 분쟁 경기 ${expiredCount}건을 모두 무효 처리할까요?`)) return;
+    setAutoVoiding(true);
+    const res = await fetch("/api/admin/auto-void-disputes", { method: "POST" });
+    const d = await res.json();
+    if (res.ok) {
+      setMatches((prev) => prev.filter((m) => {
+        const age = Date.now() - new Date(m.createdAt).getTime();
+        return age < 7 * 24 * 60 * 60 * 1000;
+      }));
+      setExpiredCount(0);
+      toast.show(d.message, "success");
+    } else {
+      toast.show(d.error || "자동 무효 처리에 실패했습니다.", "error");
+    }
+    setAutoVoiding(false);
+  }
 
   async function handle(matchId: string, action: "admin-confirm" | "void") {
     setProcessing(matchId);
@@ -54,6 +81,15 @@ export default function DisputesPage() {
       <div className="flex items-center gap-3">
         <Link href="/admin" className="text-gray-400 hover:text-gray-600">←</Link>
         <h1 className="text-2xl font-bold text-gray-900">이의제기 경기 처리</h1>
+        {expiredCount > 0 && (
+          <button
+            onClick={autoVoid}
+            disabled={autoVoiding}
+            className="ml-auto text-xs font-semibold bg-gray-700 text-white px-3 py-1.5 rounded-lg hover:bg-gray-600 disabled:opacity-50 transition-colors"
+          >
+            {autoVoiding ? "처리 중..." : `7일+ 경과 ${expiredCount}건 자동 무효`}
+          </button>
+        )}
       </div>
 
       {loading ? (

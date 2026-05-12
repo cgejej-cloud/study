@@ -16,8 +16,38 @@ async function getRole(req: NextRequest): Promise<string | null> {
   }
 }
 
+function isValidOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return true; // same-origin 요청은 origin 헤더 없음
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const allowedOrigins = [
+    baseUrl,
+    "http://localhost:3000",
+    "http://localhost:3001",
+  ].filter(Boolean);
+
+  try {
+    const requestOrigin = new URL(origin).origin;
+    return allowedOrigins.some((allowed) => new URL(allowed).origin === requestOrigin);
+  } catch {
+    return false;
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const { method } = req;
+
+  // CSRF 보호: 상태 변경 API 요청에서 Origin 검증
+  if (
+    pathname.startsWith("/api/") &&
+    ["POST", "PATCH", "PUT", "DELETE"].includes(method) &&
+    !isValidOrigin(req)
+  ) {
+    return NextResponse.json({ error: "CSRF 검증 실패" }, { status: 403 });
+  }
+
   const role = await getRole(req);
 
   // /mypage: 로그인 필요
@@ -35,9 +65,10 @@ export async function middleware(req: NextRequest) {
     if (role !== "admin") return NextResponse.redirect(new URL("/", req.url));
   }
 
+  // /tournament: 로그인 확인은 개별 API에서 처리 (공개 페이지)
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/mypage/:path*", "/admin/:path*"],
+  matcher: ["/mypage/:path*", "/admin/:path*", "/api/:path*"],
 };

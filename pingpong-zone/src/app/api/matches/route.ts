@@ -39,6 +39,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(pendingMatches);
   }
 
+  const cursor = searchParams.get("cursor") ?? undefined;
+  const limit = Math.min(Number(searchParams.get("limit") ?? 20), 50);
+
   const matches = await prisma.match.findMany({
     where: { OR: [{ player1Id: userId }, { player2Id: userId }] },
     include: {
@@ -47,10 +50,15 @@ export async function GET(req: NextRequest) {
       winner:  { select: { id: true, name: true } },
     },
     orderBy: { createdAt: "desc" },
-    take: 20,
+    take: limit + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
 
-  return NextResponse.json(matches);
+  const hasMore = matches.length > limit;
+  const items = hasMore ? matches.slice(0, limit) : matches;
+  const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+  return NextResponse.json({ items, nextCursor, hasMore });
 }
 
 export async function POST(req: NextRequest) {

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendMatchPendingNotice } from "@/lib/email";
+import { ELO_FLOOR } from "@/lib/elo";
 
 export const AUTO_CONFIRM_HOURS = 24;
 
@@ -27,9 +28,18 @@ export async function applyElo(
     data:  { status: "confirmed", confirmedAt: new Date(), seasonId: activeSeason?.id ?? null },
   });
   if (updated.count === 0) return;
+
+  // 하한선 적용: ELO_FLOOR 미만으로 내려가지 않도록
+  const [p1, p2] = await prisma.$transaction([
+    prisma.user.findUnique({ where: { id: p1Id }, select: { eloRating: true } }),
+    prisma.user.findUnique({ where: { id: p2Id }, select: { eloRating: true } }),
+  ]);
+  const safeP1Change = p1 ? Math.max(p1Change, ELO_FLOOR - p1.eloRating) : p1Change;
+  const safeP2Change = p2 ? Math.max(p2Change, ELO_FLOOR - p2.eloRating) : p2Change;
+
   await prisma.$transaction([
-    prisma.user.update({ where: { id: p1Id }, data: { eloRating: { increment: p1Change } } }),
-    prisma.user.update({ where: { id: p2Id }, data: { eloRating: { increment: p2Change } } }),
+    prisma.user.update({ where: { id: p1Id }, data: { eloRating: { increment: safeP1Change } } }),
+    prisma.user.update({ where: { id: p2Id }, data: { eloRating: { increment: safeP2Change } } }),
   ]);
 }
 

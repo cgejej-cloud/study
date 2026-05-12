@@ -77,7 +77,13 @@ function LoginForm() {
           </button>
         </form>
 
-        <p className="text-center text-[12px] mt-5" style={{ color: "var(--text-3)" }}>
+        <p className="text-center text-[12px] mt-4" style={{ color: "var(--text-3)" }}>
+          <Link href="/forgot-password" className="font-bold hover:underline" style={{ color: "var(--jade-700)" }}>
+            비밀번호를 잊으셨나요?
+          </Link>
+        </p>
+
+        <p className="text-center text-[12px] mt-2" style={{ color: "var(--text-3)" }}>
           계정이 없으신가요?{" "}
           <Link href="/register" className="font-bold hover:underline" style={{ color: "var(--jade-700)" }}>
             회원가입

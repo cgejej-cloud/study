@@ -68,20 +68,38 @@ export default function MatchHistoryPage() {
   const [myId, setMyId] = useState("");
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
 
   useEffect(() => {
     (async () => {
       const [meRes, matchRes] = await Promise.all([
         fetch("/api/me"),
-        fetch("/api/matches"),
+        fetch("/api/matches?limit=20"),
       ]);
       if (matchRes.status === 401) { router.push("/login"); return; }
       const [me, matchData] = await Promise.all([meRes.json(), matchRes.json()]);
       if (me?.id) setMyId(me.id);
-      setMatches(Array.isArray(matchData) ? matchData : []);
+      const items = matchData?.items ?? (Array.isArray(matchData) ? matchData : []);
+      setMatches(items);
+      setNextCursor(matchData?.nextCursor ?? null);
+      setHasMore(matchData?.hasMore ?? false);
       setLoading(false);
     })();
   }, [router]);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    const res = await fetch(`/api/matches?limit=20&cursor=${nextCursor}`);
+    const data = await res.json();
+    const items = data?.items ?? [];
+    setMatches((prev) => [...prev, ...items]);
+    setNextCursor(data?.nextCursor ?? null);
+    setHasMore(data?.hasMore ?? false);
+    setLoadingMore(false);
+  }
 
   const confirmed = matches.filter((m) => m.status === "confirmed");
   const wins   = confirmed.filter((m) => m.winnerId === myId).length;
@@ -195,6 +213,7 @@ export default function MatchHistoryPage() {
         ) : matches.length === 0 ? (
           <div className="p-6 text-center text-gray-400 text-sm">경기 기록이 없습니다.</div>
         ) : (
+          <>
           <div className="divide-y">
             {matches.map((m) => {
               const iWon = m.winnerId === myId;
@@ -244,6 +263,18 @@ export default function MatchHistoryPage() {
               );
             })}
           </div>
+          {hasMore && (
+            <div className="px-4 py-3 border-t text-center">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="text-sm font-semibold text-green-700 hover:underline disabled:opacity-50"
+              >
+                {loadingMore ? "불러오는 중..." : "더 보기"}
+              </button>
+            </div>
+          )}
+          </>
         )}
       </div>
     </div>

@@ -17,6 +17,7 @@ type Stats = {
   tableStats: { name: string; count: number }[];
   dowStats: { label: string; count: number }[];
   trend: { date: string; count: number }[];
+  heatmap: { matrix: number[][]; hours: string[]; dow: string[] };
 };
 
 function TrendChart({ data }: { data: { date: string; count: number }[] }) {
@@ -40,6 +41,52 @@ function TrendChart({ data }: { data: { date: string; count: number }[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function Heatmap({ matrix, hours, dow }: { matrix: number[][]; hours: string[]; dow: string[] }) {
+  const flat = matrix.flat();
+  const maxVal = Math.max(...flat, 1);
+  return (
+    <div className="overflow-x-auto">
+      <div style={{ display: "grid", gridTemplateColumns: `32px repeat(${hours.length}, 1fr)`, gap: "2px", minWidth: "480px" }}>
+        {/* 헤더 행 */}
+        <div />
+        {hours.map((h) => (
+          <div key={h} className="text-center font-semibold" style={{ fontSize: "9px", color: "var(--text-3)" }}>{h}</div>
+        ))}
+        {/* 데이터 행 */}
+        {dow.map((d, di) => (
+          <>
+            <div key={`d-${d}`} className="flex items-center justify-end pr-1 font-semibold" style={{ fontSize: "10px", color: "var(--text-3)" }}>{d}</div>
+            {hours.map((_, hi) => {
+              const count = matrix[di][hi];
+              const intensity = count / maxVal;
+              return (
+                <div
+                  key={`cell-${di}-${hi}`}
+                  title={`${d} ${hours[hi]}: ${count}건`}
+                  className="rounded"
+                  style={{
+                    height: "18px",
+                    background: count === 0
+                      ? "var(--jade-50)"
+                      : `rgba(21,128,61,${0.15 + intensity * 0.85})`,
+                  }}
+                />
+              );
+            })}
+          </>
+        ))}
+      </div>
+      <div className="flex items-center gap-1 mt-2 justify-end">
+        <span className="text-[10px]" style={{ color: "var(--text-3)" }}>적음</span>
+        {[0.15, 0.35, 0.55, 0.75, 1].map((op) => (
+          <div key={op} className="w-4 h-3 rounded" style={{ background: `rgba(21,128,61,${op})` }} />
+        ))}
+        <span className="text-[10px]" style={{ color: "var(--text-3)" }}>많음</span>
+      </div>
     </div>
   );
 }
@@ -134,6 +181,14 @@ export default function AdminStatsPage() {
         <h2 className="text-sm font-semibold text-gray-700 mb-4">탁구대별 예약 수</h2>
         <BarChart data={stats.tableStats.map(t => ({ label: t.name, count: t.count }))} maxVal={maxTable} />
       </div>
+
+      {/* 피크 타임 히트맵 */}
+      {stats.heatmap && (
+        <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">📊 피크 타임 히트맵 (요일 × 시간대)</h2>
+          <Heatmap matrix={stats.heatmap.matrix} hours={stats.heatmap.hours} dow={stats.heatmap.dow} />
+        </div>
+      )}
 
       {stats.summary.disputedCount > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">

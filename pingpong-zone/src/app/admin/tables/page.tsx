@@ -176,7 +176,15 @@ export default function AdminTablesPage() {
                     </span>
                     <span className="ml-3 text-xs text-gray-400">누적 예약 {table._count.reservations}건</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
+                    <a
+                      href={`/api/tables/${table.id}/qr`}
+                      download={`${table.name}-qr.svg`}
+                      className="text-sm text-purple-500 hover:underline"
+                      title="QR 코드 다운로드"
+                    >
+                      QR
+                    </a>
                     <button onClick={() => startEdit(table)} className="text-sm text-blue-500 hover:underline">수정</button>
                     <button onClick={() => toggleActive(table)} className={`text-sm hover:underline ${table.isActive ? "text-red-400" : "text-green-600"}`}>
                       {table.isActive ? "비활성화" : "활성화"}

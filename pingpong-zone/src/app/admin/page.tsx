@@ -77,6 +77,14 @@ export default function AdminPage() {
           <div className="text-3xl mb-1">📊</div>
           <div className="font-semibold text-gray-700">이용 통계</div>
         </Link>
+        <Link href="/admin/errors" className="card p-5 text-center hover:opacity-90 transition-opacity">
+          <div className="text-3xl mb-1">🔴</div>
+          <div className="font-semibold text-gray-700">에러 로그</div>
+        </Link>
+        <Link href="/admin/tournament" className="card p-5 text-center hover:opacity-90 transition-opacity">
+          <div className="text-3xl mb-1">🏆</div>
+          <div className="font-semibold text-gray-700">토너먼트</div>
+        </Link>
         <div className="card p-5 text-center">
           <div className="text-3xl font-bold text-green-700">{confirmed.length}</div>
           <div className="text-gray-500 mt-1 text-sm">선택 날짜 예약</div>

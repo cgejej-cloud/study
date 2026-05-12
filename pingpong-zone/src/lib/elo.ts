@@ -3,6 +3,7 @@
 export const PLACEMENT_GAMES = 5;
 export const K_PLACEMENT = 48;
 export const K_NORMAL = 24;
+export const ELO_FLOOR = 100;
 
 export function getK(totalGames: number): number {
   return totalGames < PLACEMENT_GAMES ? K_PLACEMENT : K_NORMAL;

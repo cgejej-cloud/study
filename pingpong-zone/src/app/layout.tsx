@@ -48,6 +48,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {children}
           </main>
         </Providers>
+        <script dangerouslySetInnerHTML={{ __html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js').catch(function() {});
+            });
+          }
+        ` }} />
         <footer className="mt-16 border-t" style={{ borderColor: "var(--border)", background: "white" }}>
           <div className="max-w-5xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2" style={{ fontSize: "12px", color: "var(--text-3)" }}>
             <span className="font-bold" style={{ color: "var(--jade-700)" }}>🏓 탁구존</span>
