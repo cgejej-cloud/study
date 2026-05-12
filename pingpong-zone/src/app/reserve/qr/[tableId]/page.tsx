@@ -7,7 +7,8 @@ import Link from "next/link";
 type TableInfo = { id: string; name: string; description: string | null };
 
 export default function QrLandingPage() {
-  const { tableId } = useParams<{ tableId: string }>();
+  const params = useParams<{ tableId: string }>();
+  const tableId = params?.tableId ?? "";
   const router = useRouter();
   const [table, setTable] = useState<TableInfo | null>(null);
   const [loading, setLoading] = useState(true);

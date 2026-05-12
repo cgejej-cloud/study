@@ -249,7 +249,7 @@ export default function MyPage() {
                       ELO {c.challenger.eloRating}점 · {timeAgo(c.createdAt)}
                     </p>
                     {c.message && (
-                      <p className="text-[12px] mt-1 italic" style={{ color: "var(--text-2)" }}>"{c.message}"</p>
+                      <p className="text-[12px] mt-1 italic" style={{ color: "var(--text-2)" }}>&quot;{c.message}&quot;</p>
                     )}
                   </div>
                   <div className="flex gap-2 shrink-0">

@@ -8,10 +8,10 @@ async function guard() {
   return s;
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await guard())) return NextResponse.json({ error: "권한 없음" }, { status: 403 });
 
-  const { id } = params;
+  const { id } = await params;
   const body = await req.json();
   const { isActive, name, description, config, startDate, endDate } = body;
 
@@ -45,10 +45,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await guard())) return NextResponse.json({ error: "권한 없음" }, { status: 403 });
 
-  const { id } = params;
+  const { id } = await params;
   try {
     await prisma.event.delete({ where: { id } });
     return NextResponse.json({ ok: true });

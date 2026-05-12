@@ -24,7 +24,7 @@ function NavLink({ href, label, pathname }: { href: string; label: string; pathn
 }
 
 export default function Header() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [session, setSession] = useState<SessionPayload | null | undefined>(undefined);
   const [pendingCount, setPendingCount] = useState(0);
   const [disputeCount, setDisputeCount] = useState(0);

@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+export const dynamic = "force-dynamic";
 import TodayStatus from "@/components/TodayStatus";
 import NoticeBanner from "@/components/NoticeBanner";
 import EventBanner from "@/components/EventBanner";

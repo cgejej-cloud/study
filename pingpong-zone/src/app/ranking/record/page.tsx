@@ -42,7 +42,7 @@ function calcEloChange(myElo: number, oppElo: number, myGames: number, iWon: boo
 function RecordMatchInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const preselectId = params.get("opponent");
+  const preselectId = params?.get("opponent");
   const [myId, setMyId] = useState<string>("");
   const [users, setUsers] = useState<RankEntry[]>([]);
   const [selectedOpponent, setSelectedOpponent] = useState<RankEntry | null>(null);

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 export default function OfflinePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4">

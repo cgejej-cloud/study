@@ -6,7 +6,7 @@ import Link from "next/link";
 
 function ResetPasswordForm() {
   const params = useSearchParams();
-  const token = params.get("token") ?? "";
+  const token = params?.get("token") ?? "";
 
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
   const [tokenMessage, setTokenMessage] = useState("");

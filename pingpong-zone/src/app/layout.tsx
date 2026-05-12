@@ -3,6 +3,8 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Providers from "@/components/Providers";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: {
     default: "탁구존 — 스마트 탁구장 예약·랭킹",

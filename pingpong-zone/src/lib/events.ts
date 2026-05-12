@@ -59,7 +59,7 @@ export function applyEventEffects(opts: {
   let p1Change = baseP1Change;
   let p2Change = baseP2Change;
   let multiplier = 1;
-  let eventId: string | null = events.length > 0 ? events[0].id : null;
+  const eventId: string | null = events.length > 0 ? events[0].id : null;
 
   for (const event of events) {
     const config = event.config;

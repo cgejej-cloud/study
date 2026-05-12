@@ -143,7 +143,7 @@ type FollowStatus = {
 
 export default function PlayerProfilePage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id ?? "") as string;
   const toast = useToast();
   const [player, setPlayer] = useState<Player | null>(null);
   const [eloHistory, setEloHistory] = useState<EloHistory | null>(null);

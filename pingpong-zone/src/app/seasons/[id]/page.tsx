@@ -23,7 +23,7 @@ type Payload = {
 
 export default function SeasonStandingsPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = (params?.id ?? "") as string;
   const [data, setData] = useState<Payload | null>(null);
   const [error, setError] = useState(false);
 
