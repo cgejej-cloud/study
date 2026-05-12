@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 const TIME_SLOTS = [
@@ -13,6 +13,7 @@ const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 type Table = { id: string; name: string; description: string };
 type Reservation = { tableId: string; date: string; startTime: string; endTime: string; status: string };
 type BlockedSlot = { tableId: string; date: string; startTime: string; endTime: string };
+type SlotStatus = "available" | "reserved" | "blocked";
 
 function CalendarPicker({ selected, onChange, min }: {
   selected: string;
@@ -98,6 +99,142 @@ function CalendarPicker({ selected, onChange, min }: {
   );
 }
 
+function WeeklyCalendar({
+  tableId,
+  onSelect,
+}: {
+  tableId: string;
+  onSelect: (date: string, time: string) => void;
+}) {
+  const todayObj = new Date();
+  const todayStr = todayObj.toISOString().split("T")[0];
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(todayObj);
+    d.setDate(todayObj.getDate() + i);
+    return d.toISOString().split("T")[0];
+  });
+
+  type DayMap = { [time: string]: SlotStatus };
+  const [data, setData] = useState<{ [date: string]: DayMap | "loading" }>({});
+
+  const fetchDay = useCallback(async (date: string) => {
+    setData(prev => ({ ...prev, [date]: "loading" }));
+    try {
+      const res = await fetch(`/api/availability?date=${date}`);
+      const json: Array<{ id: string; bookedSlots: Array<{ startTime: string; endTime: string; type: string }> }> = await res.json();
+      const tableData = Array.isArray(json) ? json.find(t => t.id === tableId) : undefined;
+      const dayMap: DayMap = {};
+      for (const slot of TIME_SLOTS) dayMap[slot] = "available";
+      if (tableData) {
+        for (const s of tableData.bookedSlots) {
+          for (const slot of TIME_SLOTS) {
+            if (s.startTime <= slot && s.endTime > slot) {
+              dayMap[slot] = s.type === "reserved" ? "reserved" : "blocked";
+            }
+          }
+        }
+      }
+      setData(prev => ({ ...prev, [date]: dayMap }));
+    } catch {
+      const dayMap: DayMap = {};
+      for (const slot of TIME_SLOTS) dayMap[slot] = "available";
+      setData(prev => ({ ...prev, [date]: dayMap }));
+    }
+  }, [tableId]);
+
+  useEffect(() => {
+    if (!tableId) return;
+    for (const date of days) fetchDay(date);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableId]);
+
+  const nowHour = todayObj.getHours();
+
+  return (
+    <div className="overflow-x-auto -mx-2 px-2">
+      <div className="min-w-[580px]">
+        <div className="grid gap-0.5" style={{ gridTemplateColumns: `72px repeat(7, 1fr)` }}>
+          <div />
+          {days.map(date => {
+            const d = new Date(date + "T00:00:00");
+            const dow = d.getDay();
+            const isToday = date === todayStr;
+            return (
+              <div key={date} className="text-center pb-2">
+                <div className={`text-[10px] font-semibold ${dow === 0 ? "text-red-400" : dow === 6 ? "text-blue-400" : "text-gray-500"}`}>
+                  {WEEK_DAYS[dow]}
+                </div>
+                <div
+                  className={`text-xs font-bold mt-0.5 w-6 h-6 rounded-full flex items-center justify-center mx-auto ${isToday ? "text-white" : "text-gray-800"}`}
+                  style={isToday ? { background: "var(--jade-600)" } : undefined}
+                >
+                  {d.getDate()}
+                </div>
+              </div>
+            );
+          })}
+
+          {TIME_SLOTS.map(time => (
+            <>
+              <div key={`label-${time}`} className="flex items-center justify-end pr-2 text-[10px] font-medium text-gray-400" style={{ height: "34px" }}>
+                {time}
+              </div>
+              {days.map(date => {
+                const dayData = data[date];
+                const isLoading = dayData === "loading" || dayData === undefined;
+                const status: SlotStatus = isLoading ? "available" : ((dayData as DayMap)[time] ?? "available");
+                const hour = Number(time.split(":")[0]);
+                const isPast = date < todayStr || (date === todayStr && hour <= nowHour);
+
+                return (
+                  <div key={`${date}-${time}`} className="px-0.5 py-0.5">
+                    {isLoading ? (
+                      <div className="skeleton h-7 rounded" />
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={status !== "available" || isPast}
+                        onClick={() => onSelect(date, time)}
+                        className={`w-full h-7 rounded text-[9px] font-semibold transition-all ${
+                          status === "available" && !isPast ? "hover:scale-105 active:scale-95" : "cursor-not-allowed"
+                        }`}
+                        style={
+                          status === "reserved"
+                            ? { background: "#fee2e2", color: "#f87171" }
+                            : status === "blocked"
+                            ? { background: "var(--border)", color: "var(--muted)" }
+                            : isPast
+                            ? { background: "#f1f5f9", color: "#94a3b8" }
+                            : { background: "var(--jade-100)", color: "var(--jade-700)" }
+                        }
+                        aria-label={`${date} ${time} ${status === "available" && !isPast ? "예약 가능" : status === "reserved" ? "예약됨" : "불가"}`}
+                      >
+                        {status === "reserved" ? "예약됨" : status === "blocked" ? "불가" : ""}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          ))}
+        </div>
+
+        <div className="flex gap-4 mt-3 text-[11px] text-gray-500">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded inline-block" style={{ background: "var(--jade-100)" }} /> 예약 가능
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded inline-block bg-red-100" /> 예약됨
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded inline-block bg-gray-200" /> 이용불가
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ReservePage() {
   const router = useRouter();
   const [tables, setTables] = useState<Table[]>([]);
@@ -111,6 +248,7 @@ export default function ReservePage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [waitlistMsg, setWaitlistMsg] = useState<Record<string, string>>({});
+  const [viewTab, setViewTab] = useState<"slots" | "weekly">("slots");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -192,6 +330,12 @@ export default function ReservePage() {
     router.push(`/reserve/confirm/${data.id}`);
   }
 
+  function handleWeeklySelect(date: string, time: string) {
+    setSelectedDate(date);
+    setSelectedTime(time);
+    setViewTab("slots");
+  }
+
   const step = !selectedTable ? 1 : !selectedDate ? 2 : !selectedTime ? 3 : 4;
 
   return (
@@ -249,53 +393,84 @@ export default function ReservePage() {
           />
         </div>
 
-        {selectedTable && selectedDate && (
+        {selectedTable && (
           <div>
-            <label className="block font-semibold mb-2">시간 선택 (1시간 단위)</label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-              {TIME_SLOTS.map((time) => {
-                const status = getSlotStatus(time);
-                const wMsg = waitlistMsg[time];
-                return (
-                  <div key={time} className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      disabled={status !== "available"}
-                      onClick={() => setSelectedTime(time)}
-                      aria-label={`${time} ${status === "reserved" ? "예약됨" : status === "blocked" ? "예약 불가" : "예약 가능"}`}
-                      className={`min-h-[44px] py-3 rounded-lg text-sm font-medium transition ${
-                        status === "reserved"
-                          ? "bg-red-100 text-red-400 cursor-not-allowed"
-                          : status === "blocked"
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : selectedTime === time
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-100 hover:bg-green-100"
-                      }`}
-                    >
-                      {time}
-                      {status === "reserved" && <div className="text-xs">예약됨</div>}
-                      {status === "blocked" && <div className="text-xs">불가</div>}
-                    </button>
-                    {status === "reserved" && (
-                      <button
-                        type="button"
-                        onClick={() => handleWaitlist(time)}
-                        disabled={!!wMsg}
-                        className="text-xs py-1 rounded-lg font-semibold transition bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-60"
-                      >
-                        {wMsg || "대기"}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+            <div className="flex items-center justify-between mb-3">
+              <label className="font-semibold">시간 선택 (1시간 단위)</label>
+              <div className="flex rounded-full overflow-hidden border border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setViewTab("slots")}
+                  className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewTab === "slots" ? "bg-green-600 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+                >
+                  시간 선택
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewTab("weekly")}
+                  className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewTab === "weekly" ? "bg-green-600 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}
+                >
+                  주간 보기
+                </button>
+              </div>
             </div>
-            <div className="flex gap-4 mt-2 text-xs text-gray-500">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block border" /> 예약가능</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 inline-block" /> 예약됨</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-200 inline-block" /> 이용불가</span>
-            </div>
+
+            {viewTab === "slots" && !selectedDate && (
+              <p className="text-sm text-gray-400 text-center py-4">날짜를 먼저 선택해주세요.</p>
+            )}
+
+            {viewTab === "slots" && selectedDate && (
+              <>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                  {TIME_SLOTS.map((time) => {
+                    const status = getSlotStatus(time);
+                    const wMsg = waitlistMsg[time];
+                    return (
+                      <div key={time} className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          disabled={status !== "available"}
+                          onClick={() => setSelectedTime(time)}
+                          aria-label={`${time} ${status === "reserved" ? "예약됨" : status === "blocked" ? "예약 불가" : "예약 가능"}`}
+                          className={`min-h-[44px] py-3 rounded-lg text-sm font-medium transition ${
+                            status === "reserved"
+                              ? "bg-red-100 text-red-400 cursor-not-allowed"
+                              : status === "blocked"
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : selectedTime === time
+                              ? "bg-green-600 text-white"
+                              : "bg-gray-100 hover:bg-green-100"
+                          }`}
+                        >
+                          {time}
+                          {status === "reserved" && <div className="text-xs">예약됨</div>}
+                          {status === "blocked" && <div className="text-xs">불가</div>}
+                        </button>
+                        {status === "reserved" && (
+                          <button
+                            type="button"
+                            onClick={() => handleWaitlist(time)}
+                            disabled={!!wMsg}
+                            className="text-xs py-1 rounded-lg font-semibold transition bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-60"
+                          >
+                            {wMsg || "대기"}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block border" /> 예약가능</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 inline-block" /> 예약됨</span>
+                  <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-200 inline-block" /> 이용불가</span>
+                </div>
+              </>
+            )}
+
+            {viewTab === "weekly" && (
+              <WeeklyCalendar tableId={selectedTable} onSelect={handleWeeklySelect} />
+            )}
           </div>
         )}
 
