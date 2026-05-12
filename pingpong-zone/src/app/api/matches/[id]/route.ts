@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { applyElo } from "@/lib/matchHelpers";
+import { sendPushToUser } from "@/lib/webpush";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -67,6 +68,12 @@ export async function PATCH(
       return NextResponse.json({ error: "포인트 변동값이 없습니다." }, { status: 400 });
     }
     await applyElo(id, match.player1Id, match.p1EloChange, match.player2Id, match.p2EloChange);
+    const sign = (match.p1EloChange ?? 0) >= 0 ? "+" : "";
+    sendPushToUser(match.player1Id, {
+      title: "경기 확인 완료",
+      body: `ELO ${sign}${match.p1EloChange} 반영됐습니다.`,
+      url: "/mypage",
+    });
     return NextResponse.json({ status: "confirmed" });
   }
 

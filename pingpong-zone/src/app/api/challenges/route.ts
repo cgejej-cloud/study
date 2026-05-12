@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { sendEmailIfEnabled } from "@/lib/email";
+import { sendPushToUser } from "@/lib/webpush";
 
 export async function GET() {
   const session = await getSession();
@@ -81,6 +82,12 @@ export async function POST(req: NextRequest) {
      <p>마이페이지에서 수락하거나 거절해 주세요. 48시간 후 자동 만료됩니다.</p>
      <a href="${BASE_URL}/mypage">마이페이지 바로가기</a>`
   );
+
+  sendPushToUser(challengedId, {
+    title: "경기 신청이 도착했습니다",
+    body: `${session.name}님이 경기를 신청했습니다.`,
+    url: "/mypage",
+  });
 
   return NextResponse.json(challenge, { status: 201 });
 }

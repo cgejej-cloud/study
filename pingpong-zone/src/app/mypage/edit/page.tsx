@@ -12,7 +12,7 @@ export default function EditProfilePage() {
   const [phone, setPhone] = useState("");
   const [emailNotify, setEmailNotify] = useState(true);
   const [avatar, setAvatar] = useState("");
-  const [avatarError, setAvatarError] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -130,30 +130,45 @@ export default function EditProfilePage() {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold mb-1 text-gray-700">아바타 URL</label>
-          <input
-            type="url"
-            value={avatar}
-            onChange={(e) => { setAvatar(e.target.value); setAvatarError(false); }}
-            placeholder="https://example.com/avatar.jpg"
-            maxLength={500}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          {avatar && (
-            <div className="mt-2 flex items-center gap-3">
-              {avatarError ? (
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">오류</div>
-              ) : (
-                <img
-                  src={avatar}
-                  alt="아바타 미리보기"
-                  onError={() => setAvatarError(true)}
-                  className="w-16 h-16 rounded-full object-cover border border-gray-200"
+          <label className="block text-sm font-semibold mb-1 text-gray-700">프로필 사진</label>
+          <div className="flex items-center gap-4">
+            {avatar ? (
+              <img src={avatar} alt="아바타" className="w-16 h-16 rounded-full object-cover border border-gray-200 shrink-0" />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xl shrink-0">
+                {name?.[0] ?? "?"}
+              </div>
+            )}
+            <div className="flex-1">
+              <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                <span>📷</span>
+                <span>{avatarUploading ? "업로드 중..." : "사진 변경"}</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  disabled={avatarUploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setAvatarUploading(true);
+                    const fd = new FormData();
+                    fd.append("file", file);
+                    const res = await fetch("/api/me/avatar", { method: "POST", body: fd });
+                    const data = await res.json();
+                    setAvatarUploading(false);
+                    if (res.ok) {
+                      setAvatar(data.url);
+                      toast.show("프로필 사진이 변경되었습니다.", "success");
+                    } else {
+                      toast.show(data.error || "업로드 실패", "error");
+                    }
+                  }}
                 />
-              )}
-              <span className="text-xs text-gray-400">미리보기</span>
+              </label>
+              <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP · 최대 2MB</p>
             </div>
-          )}
+          </div>
         </div>
 
         <div className="flex items-center justify-between border-t pt-4">

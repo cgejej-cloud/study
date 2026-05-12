@@ -1,30 +1,28 @@
-import nodemailer from "nodemailer";
-
-const configured =
-  !!process.env.SMTP_HOST &&
-  !!process.env.SMTP_USER &&
-  !!process.env.SMTP_PASS;
-
-const transporter = configured
-  ? nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT ?? 587),
-      secure: process.env.SMTP_PORT === "465",
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    })
-  : null;
-
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.SMTP_FROM ?? "탁구존 <noreply@pingpongzone.kr>";
 
 export async function sendEmail(to: string, subject: string, html: string) {
-  if (!transporter) {
+  if (!RESEND_API_KEY) {
     console.log(`[Email 미설정] TO: ${to} | SUBJECT: ${subject}`);
     return;
   }
-  await transporter.sendMail({ from: FROM, to, subject, html });
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from: FROM, to, subject, html }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("[Resend 전송 실패]", res.status, err);
+    throw new Error(`Resend error ${res.status}`);
+  }
 }
 
-// 사용자 알림 옵션을 존중하는 헬퍼 - 호출처가 깜빡할 수 없도록 단일 경로 제공
 export async function sendEmailIfEnabled(
   user: { email: string | null; emailNotify: boolean } | null | undefined,
   subject: string,
@@ -84,5 +82,28 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
      <p>아래 링크를 클릭하여 비밀번호를 재설정해 주세요. 링크는 1시간 후 만료됩니다.</p>
      <p><a href="${link}">${link}</a></p>
      <p>본인이 요청하지 않으셨다면 이 이메일을 무시하세요.</p>`
+  );
+}
+
+export async function sendWaitlistNotice(opts: {
+  to: string;
+  name: string;
+  tableName: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+}) {
+  const { to, name, tableName, date, startTime, endTime } = opts;
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  await sendEmail(
+    to,
+    `[탁구존] 대기 중인 슬롯이 열렸습니다 — ${date} ${startTime}`,
+    `<p>${name}님, 대기하셨던 슬롯에 자리가 생겼습니다!</p>
+     <ul>
+       <li>탁구대: <b>${tableName}</b></li>
+       <li>날짜: <b>${date}</b></li>
+       <li>시간: <b>${startTime} ~ ${endTime}</b></li>
+     </ul>
+     <p><a href="${BASE_URL}/reserve">지금 예약하러 가기</a></p>`
   );
 }
