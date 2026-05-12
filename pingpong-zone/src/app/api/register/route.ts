@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { validateEmail, validateName, validatePassword, validatePhone } from "@/lib/validation";
-import { rateLimit } from "@/lib/rateLimit";
+import { checkIpRateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest) {
-  // IP 기준 회원가입 레이트 리밋 (10회/시간)
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || req.headers.get("x-real-ip") || "unknown";
-  const limit = rateLimit(`register:${ip}`, 10, 60 * 60 * 1000);
-  if (!limit.ok) {
+  const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+  const ipCheck = checkIpRateLimit(ip, { max: 3, windowMs: 10 * 60 * 1000 });
+  if (!ipCheck.allowed) {
     return NextResponse.json({ error: "잠시 후 다시 시도해주세요." }, { status: 429 });
   }
 

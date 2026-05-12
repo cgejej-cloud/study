@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
-  const { name, phone, currentPassword, newPassword, emailNotify } = await req.json();
+  const { name, phone, currentPassword, newPassword, emailNotify, avatar } = await req.json();
 
   if (!validateName(name)) {
     return NextResponse.json({ error: "이름은 2~30자로 입력해주세요." }, { status: 400 });
@@ -39,10 +39,17 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
+  if (avatar !== undefined && avatar !== null && avatar !== "") {
+    if (!avatar.startsWith("https://") || avatar.length > 500) {
+      return NextResponse.json({ error: "아바타 URL은 https로 시작하는 500자 이하여야 합니다." }, { status: 400 });
+    }
+  }
+
   const updateData: Record<string, unknown> = { name: name.trim() };
   if (phone !== undefined) updateData.phone = phone || null;
   if (newPassword) updateData.password = await bcrypt.hash(newPassword, 10);
   if (typeof emailNotify === "boolean") updateData.emailNotify = emailNotify;
+  if (avatar !== undefined) updateData.avatar = avatar || null;
 
   const updated = await prisma.user.update({ where: { id: session.id }, data: updateData });
   await createSession({ id: updated.id, name: updated.name, email: updated.email, role: updated.role });

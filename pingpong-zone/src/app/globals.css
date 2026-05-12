@@ -41,6 +41,28 @@
   --text-3:    #6b7f6e;
 }
 
+/* ── 다크 모드 ────────────────────────────── */
+[data-theme="dark"] {
+  --jade-50:   #0f2414;
+  --jade-100:  #133019;
+  --jade-200:  #1a4524;
+  --jade-400:  #3db868;
+  --jade-500:  #2ea854;
+  --jade-600:  #27923f;
+  --jade-700:  #1f7831;
+  --jade-800:  #166325;
+  --jade-900:  #0f4f1b;
+  --jade-950:  #061209;
+
+  --bg:        #0f1a12;
+  --surface:   #1a2b1e;
+  --border:    #2a3f2e;
+  --muted:     #4a6050;
+  --text-1:    #e8f5ea;
+  --text-2:    #b8d4bc;
+  --text-3:    #7a9e80;
+}
+
 /* ── Tailwind v4 테마 등록 ───────────────── */
 @theme inline {
   --color-background:  var(--bg);
@@ -103,14 +125,14 @@ input, select, textarea {
 
 /* Card */
 .card {
-  background: white;
+  background: var(--surface);
   border-radius: 18px;
-  box-shadow: 0 1px 4px rgba(17,28,20,0.06), 0 0 0 1px rgba(17,28,20,0.04);
+  box-shadow: 0 1px 4px rgba(17,28,20,0.06), 0 0 0 1px var(--border);
 }
 .card-sm {
-  background: white;
+  background: var(--surface);
   border-radius: 14px;
-  box-shadow: 0 1px 3px rgba(17,28,20,0.05), 0 0 0 1px rgba(17,28,20,0.04);
+  box-shadow: 0 1px 3px rgba(17,28,20,0.05), 0 0 0 1px var(--border);
 }
 
 /* Primary button */
@@ -134,7 +156,7 @@ input, select, textarea {
 .btn-jade:active { transform: translateY(0); }
 
 .btn-outline {
-  background: white;
+  background: var(--surface);
   color: var(--jade-700);
   box-shadow: 0 0 0 1.5px var(--jade-200);
 }
@@ -207,6 +229,10 @@ input, select, textarea {
   animation: shimmer 1.4s infinite;
   border-radius: 8px;
 }
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, #1e3022 25%, #243828 50%, #1e3022 75%);
+  background-size: 200% 100%;
+}
 
 /* ═══════════════════════════════════════════
    TABLE SHARED
@@ -220,13 +246,13 @@ input, select, textarea {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-3);
-  background: #f8faf8;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 .pp-table td {
   padding: 10px 14px;
-  border-bottom: 1px solid #f0f4f1;
+  border-bottom: 1px solid var(--border);
 }
 .pp-table tbody tr:last-child td { border-bottom: none; }
-.pp-table tbody tr:hover td     { background: #f8faf8; }
+.pp-table tbody tr:hover td     { background: var(--jade-50); }
 .pp-table tbody tr.my-row td    { background: var(--jade-50); }

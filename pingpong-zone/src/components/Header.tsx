@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { SessionPayload } from "@/lib/session";
 import NotificationBell from "@/components/NotificationBell";
 import GlobalSearch from "@/components/GlobalSearch";
+import ThemeToggle from "@/components/ThemeToggle";
 
 function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
   const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -77,8 +78,10 @@ export default function Header() {
 
         {/* 네비게이션 */}
         <nav className="flex items-center gap-0.5 min-w-0">
+          <ThemeToggle />
           <NavLink href="/reserve" label="예약" pathname={pathname} />
           <NavLink href="/ranking" label="랭킹" pathname={pathname} />
+          <NavLink href="/events" label="이벤트" pathname={pathname} />
 
           {session === undefined ? (
             <span className="w-5 h-5 rounded-full bg-white/10 animate-pulse ml-2" />

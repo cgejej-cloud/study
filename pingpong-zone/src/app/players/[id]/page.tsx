@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import { useToast } from "@/components/Toast";
 
 type Player = {
   id: string;
@@ -134,12 +135,24 @@ const TIER_INFO = [
 ];
 function getTier(elo: number) { return TIER_INFO.find((t) => elo >= t.minElo) ?? TIER_INFO[TIER_INFO.length - 1]; }
 
+type FollowStatus = {
+  following: boolean;
+  followerCount: number;
+  followingCount: number;
+};
+
 export default function PlayerProfilePage() {
   const params = useParams();
   const id = params.id as string;
+  const toast = useToast();
   const [player, setPlayer] = useState<Player | null>(null);
   const [eloHistory, setEloHistory] = useState<EloHistory | null>(null);
   const [error, setError] = useState(false);
+  const [myId, setMyId] = useState<string | null>(null);
+  const [followStatus, setFollowStatus] = useState<FollowStatus | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [challengeSent, setChallengeSent] = useState(false);
+  const [challengeLoading, setChallengeLoading] = useState(false);
 
   useEffect(() => {
     fetch(`/api/players/${id}`)
@@ -151,7 +164,58 @@ export default function PlayerProfilePage() {
       .then((r) => r.ok ? r.json() : null)
       .then((d) => d && setEloHistory(d))
       .catch(() => {});
+
+    fetch("/api/me")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d?.id) setMyId(d.id); })
+      .catch(() => {});
+
+    fetch(`/api/follow/${id}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setFollowStatus(d); })
+      .catch(() => {});
   }, [id]);
+
+  async function handleFollow() {
+    if (!myId || followLoading) return;
+    setFollowLoading(true);
+    try {
+      if (followStatus?.following) {
+        const res = await fetch(`/api/follow/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          setFollowStatus((prev) => prev ? { ...prev, following: false, followerCount: prev.followerCount - 1 } : prev);
+        }
+      } else {
+        const res = await fetch(`/api/follow/${id}`, { method: "POST" });
+        if (res.ok) {
+          setFollowStatus((prev) => prev ? { ...prev, following: true, followerCount: prev.followerCount + 1 } : prev);
+        }
+      }
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
+  async function handleChallenge() {
+    if (!myId || challengeLoading || challengeSent) return;
+    setChallengeLoading(true);
+    try {
+      const res = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengedId: id }),
+      });
+      if (res.ok) {
+        setChallengeSent(true);
+        toast.show("경기 신청을 보냈습니다!", "success");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.show(data.error || "신청에 실패했습니다.", "error");
+      }
+    } finally {
+      setChallengeLoading(false);
+    }
+  }
 
   if (error) {
     return (
@@ -202,6 +266,11 @@ export default function PlayerProfilePage() {
           <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>
             가입 · {new Date(player.joinedAt).toLocaleDateString("ko-KR")}
           </p>
+          {followStatus && (
+            <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>
+              팔로워 <span className="font-semibold" style={{ color: "var(--text-2)" }}>{followStatus.followerCount}</span>
+            </p>
+          )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             {player.stats.streak && player.stats.streak.count >= 3 && (
               <span
@@ -230,6 +299,26 @@ export default function PlayerProfilePage() {
               </div>
             )}
           </div>
+          {myId && myId !== id && (
+            <div className="flex gap-2 mt-3 flex-wrap">
+              <button
+                onClick={handleFollow}
+                disabled={followLoading}
+                className={followStatus?.following ? "btn" : "btn btn-jade"}
+                style={{ fontSize: "12px", opacity: followLoading ? 0.6 : 1 }}
+              >
+                {followStatus?.following ? "팔로잉" : "팔로우"}
+              </button>
+              <button
+                onClick={handleChallenge}
+                disabled={challengeLoading || challengeSent}
+                className="btn"
+                style={{ fontSize: "12px", opacity: (challengeLoading || challengeSent) ? 0.6 : 1 }}
+              >
+                {challengeSent ? "신청 완료!" : challengeLoading ? "신청 중..." : "⚔️ 경기 신청"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

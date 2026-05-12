@@ -16,8 +16,10 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   if (!await guard()) return NextResponse.json({ error: "권한 없음" }, { status: 403 });
-  const { title, content, isPinned } = await req.json();
+  const { title, content, contentMd, isPinned } = await req.json();
   if (!title || !content) return NextResponse.json({ error: "제목과 내용을 입력해주세요." }, { status: 400 });
-  const notice = await prisma.notice.create({ data: { title, content, isPinned: !!isPinned } });
+  const notice = await prisma.notice.create({
+    data: { title, content, contentMd: contentMd ?? null, isPinned: !!isPinned },
+  });
   return NextResponse.json(notice);
 }

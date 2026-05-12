@@ -1,6 +1,7 @@
 import Link from "next/link";
 import TodayStatus from "@/components/TodayStatus";
 import NoticeBanner from "@/components/NoticeBanner";
+import EventBanner from "@/components/EventBanner";
 import ActivityFeed from "@/components/ActivityFeed";
 import MyStatusCard from "@/components/MyStatusCard";
 
@@ -8,6 +9,7 @@ export default function HomePage() {
   return (
     <div className="space-y-5">
       <NoticeBanner />
+      <EventBanner />
       <MyStatusCard />
 
       {/* ── 히어로 ─────────────────────────────── */}

@@ -63,6 +63,32 @@ function SparkLine({ data, height = 60 }: { data: number[]; height?: number }) {
   );
 }
 
+function buildOgUrl(m: Match, myId: string): string {
+  const iAmP1 = m.player1.id === myId;
+  const iWon = m.winnerId === myId;
+  const myChange = iAmP1 ? m.p1EloChange : m.p2EloChange;
+  const opponent = iAmP1 ? m.player2 : m.player1;
+  const winner = iWon ? (iAmP1 ? m.player1.name : m.player2.name) : opponent.name;
+  const loser = iWon ? opponent.name : (iAmP1 ? m.player1.name : m.player2.name);
+  const change = myChange !== null ? (myChange >= 0 ? `+${myChange}` : `${myChange}`) : "+0";
+  const date = new Date(m.confirmedAt ?? m.createdAt).toISOString().slice(0, 10);
+  const params = new URLSearchParams({ winner, loser, change, elo: "1000", date });
+  return `/api/og/match/${m.id}?${params.toString()}`;
+}
+
+async function shareMatch(url: string, title: string) {
+  const fullUrl = `${window.location.origin}${url}`;
+  if (typeof navigator.share === "function") {
+    try {
+      await navigator.share({ title, url: fullUrl });
+      return;
+    } catch {
+    }
+  }
+  await navigator.clipboard.writeText(fullUrl);
+  alert("공유 링크가 클립보드에 복사되었습니다.");
+}
+
 export default function MatchHistoryPage() {
   const router = useRouter();
   const [myId, setMyId] = useState("");
@@ -258,6 +284,15 @@ export default function MatchHistoryPage() {
                     <span className={`text-sm font-bold ${myChange >= 0 ? "text-green-600" : "text-red-500"}`}>
                       {myChange >= 0 ? "+" : ""}{myChange}
                     </span>
+                  )}
+                  {m.status === "confirmed" && (
+                    <button
+                      onClick={() => shareMatch(buildOgUrl(m, myId), `탁구존 경기 결과`)}
+                      className="text-xs text-gray-400 hover:text-green-600 transition-colors px-1"
+                      title="공유"
+                    >
+                      공유
+                    </button>
                   )}
                 </div>
               );

@@ -10,6 +10,7 @@ type RankEntry = {
   isPlacing: boolean; placementLeft: number;
   winRate: number | null;
   streak: { type: "W" | "L"; count: number } | null;
+  rankChange: number | null;
 };
 type SeasonStanding = {
   id: string; name: string; rating: number; rank: number;
@@ -219,14 +220,15 @@ export default function RankingPage() {
               <div className="overflow-x-auto">
                 <table className="pp-table" style={{ minWidth: "520px" }}>
                   <thead><tr>
-                    {["순위","티어","선수","포인트","승","패","승률"].map(h => <th key={h}>{h}</th>)}
+                    {["순위","티어","선수","변동","포인트","승","패","승률"].map(h => <th key={h}>{h}</th>)}
                   </tr></thead>
                   <tbody>
                     {placed.length === 0 ? (
-                      <tr><td colSpan={7} className="text-center py-6 text-[13px]" style={{ color: "var(--text-3)" }}>검색 결과가 없습니다</td></tr>
+                      <tr><td colSpan={8} className="text-center py-6 text-[13px]" style={{ color: "var(--text-3)" }}>검색 결과가 없습니다</td></tr>
                     ) : placed.map((entry, i) => {
                       const tier = getTier(entry.eloRating);
                       const isMe = entry.id === myId;
+                      const rc = entry.rankChange;
                       return (
                         <tr key={entry.id} className={isMe ? "my-row" : ""}>
                           <td className="font-bold" style={{ color: "var(--text-3)" }}>
@@ -255,6 +257,17 @@ export default function RankingPage() {
                                 </span>
                               )}
                             </div>
+                          </td>
+                          <td className="font-semibold text-[12px]">
+                            {rc === null ? (
+                              <span style={{ color: "var(--text-3)" }}>NEW</span>
+                            ) : rc > 0 ? (
+                              <span style={{ color: "#16a34a" }}>+{rc}</span>
+                            ) : rc < 0 ? (
+                              <span style={{ color: "#e11d48" }}>{rc}</span>
+                            ) : (
+                              <span style={{ color: "var(--text-3)" }}>-</span>
+                            )}
                           </td>
                           <td className="font-extrabold" style={{ color: "var(--jade-700)" }}>{entry.eloRating}</td>
                           <td className="font-medium" style={{ color: "#2563eb" }}>{entry.wins}</td>

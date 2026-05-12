@@ -110,6 +110,7 @@ export default function ReservePage() {
   const [recurWeeks, setRecurWeeks] = useState(4);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [waitlistMsg, setWaitlistMsg] = useState<Record<string, string>>({});
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -140,6 +141,22 @@ export default function ReservePage() {
     if (reservations.some((r) => r.startTime <= time && r.endTime > time)) return "reserved";
     if (blocked.some((b) => b.startTime <= time && b.endTime > time)) return "blocked";
     return "available";
+  }
+
+  async function handleWaitlist(time: string) {
+    if (!selectedTable || !selectedDate) return;
+    const endTime = `${String(Number(time.split(":")[0]) + 1).padStart(2, "0")}:00`;
+    const res = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tableId: selectedTable, date: selectedDate, startTime: time, endTime }),
+    });
+    if (res.status === 401) { router.push("/login"); return; }
+    const data = await res.json();
+    setWaitlistMsg((prev) => ({
+      ...prev,
+      [time]: res.ok ? "대기 등록 완료!" : (data.error || "대기 등록 실패"),
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -238,27 +255,39 @@ export default function ReservePage() {
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
               {TIME_SLOTS.map((time) => {
                 const status = getSlotStatus(time);
+                const wMsg = waitlistMsg[time];
                 return (
-                  <button
-                    key={time}
-                    type="button"
-                    disabled={status !== "available"}
-                    onClick={() => setSelectedTime(time)}
-                    aria-label={`${time} ${status === "reserved" ? "예약됨" : status === "blocked" ? "예약 불가" : "예약 가능"}`}
-                    className={`min-h-[44px] py-3 rounded-lg text-sm font-medium transition ${
-                      status === "reserved"
-                        ? "bg-red-100 text-red-400 cursor-not-allowed"
-                        : status === "blocked"
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : selectedTime === time
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-100 hover:bg-green-100"
-                    }`}
-                  >
-                    {time}
-                    {status === "reserved" && <div className="text-xs">예약됨</div>}
-                    {status === "blocked" && <div className="text-xs">불가</div>}
-                  </button>
+                  <div key={time} className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      disabled={status !== "available"}
+                      onClick={() => setSelectedTime(time)}
+                      aria-label={`${time} ${status === "reserved" ? "예약됨" : status === "blocked" ? "예약 불가" : "예약 가능"}`}
+                      className={`min-h-[44px] py-3 rounded-lg text-sm font-medium transition ${
+                        status === "reserved"
+                          ? "bg-red-100 text-red-400 cursor-not-allowed"
+                          : status === "blocked"
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : selectedTime === time
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-100 hover:bg-green-100"
+                      }`}
+                    >
+                      {time}
+                      {status === "reserved" && <div className="text-xs">예약됨</div>}
+                      {status === "blocked" && <div className="text-xs">불가</div>}
+                    </button>
+                    {status === "reserved" && (
+                      <button
+                        type="button"
+                        onClick={() => handleWaitlist(time)}
+                        disabled={!!wMsg}
+                        className="text-xs py-1 rounded-lg font-semibold transition bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-60"
+                      >
+                        {wMsg || "대기"}
+                      </button>
+                    )}
+                  </div>
                 );
               })}
             </div>

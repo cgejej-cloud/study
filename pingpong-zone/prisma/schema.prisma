@@ -9,34 +9,47 @@ datasource db {
 }
 
 model User {
-  id                  String               @id @default(cuid())
+  id                  String                @id @default(cuid())
   name                String
-  email               String               @unique
+  email               String                @unique
   password            String?
   phone               String?
-  role                String               @default("user")
-  eloRating           Int                  @default(1000)
-  emailNotify         Boolean              @default(true)
-  createdAt           DateTime             @default(now())
+  role                String                @default("user")
+  eloRating           Int                   @default(1000)
+  emailNotify         Boolean               @default(true)
+  avatar              String?
+  createdAt           DateTime              @default(now())
   reservations        Reservation[]
-  matchesAsPlayer1    Match[]              @relation("Player1Matches")
-  matchesAsPlayer2    Match[]              @relation("Player2Matches")
-  matchesWon          Match[]              @relation("WonMatches")
+  matchesAsPlayer1    Match[]               @relation("Player1Matches")
+  matchesAsPlayer2    Match[]               @relation("Player2Matches")
+  matchesWon          Match[]               @relation("WonMatches")
   seasonSnapshots     SeasonSnapshot[]
   passwordResetTokens PasswordResetToken[]
   tournamentPlayers   TournamentPlayer[]
-  tmMatchesAsP1       TournamentMatch[]    @relation("TM_Player1")
-  tmMatchesAsP2       TournamentMatch[]    @relation("TM_Player2")
-  tmMatchesWon        TournamentMatch[]    @relation("TM_Winner")
+  tmMatchesAsP1       TournamentMatch[]     @relation("TM_Player1")
+  tmMatchesAsP2       TournamentMatch[]     @relation("TM_Player2")
+  tmMatchesWon        TournamentMatch[]     @relation("TM_Winner")
+  followers           Follow[]              @relation("Following")
+  following           Follow[]              @relation("Followers")
+  challengesSent      MatchChallenge[]      @relation("ChallengesSent")
+  challengesReceived  MatchChallenge[]      @relation("ChallengesReceived")
+  pushSubscriptions   PushSubscription[]
+  waitlistEntries     ReservationWaitlist[]
+  rankSnapshots       RankSnapshot[]
+  teamMatchesT1P1     TeamMatch[]           @relation("T1P1")
+  teamMatchesT1P2     TeamMatch[]           @relation("T1P2")
+  teamMatchesT2P1     TeamMatch[]           @relation("T2P1")
+  teamMatchesT2P2     TeamMatch[]           @relation("T2P2")
 }
 
 model Table {
-  id           String        @id @default(cuid())
-  name         String
-  description  String?
-  isActive     Boolean       @default(true)
-  reservations Reservation[]
-  blockedSlots BlockedSlot[]
+  id             String                @id @default(cuid())
+  name           String
+  description    String?
+  isActive       Boolean               @default(true)
+  reservations   Reservation[]
+  blockedSlots   BlockedSlot[]
+  waitlistEntries ReservationWaitlist[]
 }
 
 model BlockedSlot {
@@ -77,49 +90,55 @@ model Reservation {
 }
 
 model Match {
-  id          String    @id @default(cuid())
-  player1Id   String
-  player2Id   String
-  winnerId    String
-  status      String    @default("confirmed")
-  p1Score     Int?
-  p2Score     Int?
-  p1EloChange Int?
-  p2EloChange Int?
-  confirmedAt DateTime?
-  seasonId    String?
-  createdAt   DateTime  @default(now())
-  player1     User      @relation("Player1Matches", fields: [player1Id], references: [id])
-  player2     User      @relation("Player2Matches", fields: [player2Id], references: [id])
-  winner      User      @relation("WonMatches", fields: [winnerId], references: [id])
-  season      Season?   @relation(fields: [seasonId], references: [id])
+  id             String    @id @default(cuid())
+  player1Id      String
+  player2Id      String
+  winnerId       String
+  status         String    @default("confirmed")
+  p1Score        Int?
+  p2Score        Int?
+  p1EloChange    Int?
+  p2EloChange    Int?
+  confirmedAt    DateTime?
+  seasonId       String?
+  eventId        String?
+  eloMultiplier  Float     @default(1.0)
+  createdAt      DateTime  @default(now())
+  player1        User      @relation("Player1Matches", fields: [player1Id], references: [id])
+  player2        User      @relation("Player2Matches", fields: [player2Id], references: [id])
+  winner         User      @relation("WonMatches", fields: [winnerId], references: [id])
+  season         Season?   @relation(fields: [seasonId], references: [id])
+  event          Event?    @relation(fields: [eventId], references: [id])
 
   @@index([player1Id, status])
   @@index([player2Id, status])
   @@index([status, createdAt])
   @@index([seasonId])
+  @@index([eventId])
 }
 
 model Notice {
-  id        String   @id @default(cuid())
-  title     String
-  content   String
-  isPinned  Boolean  @default(false)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  contentMd   String?
+  isPinned    Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
   @@index([isActive, isPinned, createdAt])
 }
 
 model Season {
-  id        String           @id @default(cuid())
-  name      String
-  startDate DateTime
-  endDate   DateTime?
-  isActive  Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  matches   Match[]
-  snapshots SeasonSnapshot[]
+  id          String           @id @default(cuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  matches     Match[]
+  snapshots   SeasonSnapshot[]
+  teamMatches TeamMatch[]
 }
 
 model SeasonSnapshot {
@@ -203,4 +222,117 @@ model ErrorLog {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// ── 팔로우 ──────────────────────────────────────
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower    User     @relation("Followers", fields: [followerId], references: [id])
+  following   User     @relation("Following", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+// ── 매치 챌린지 ─────────────────────────────────
+model MatchChallenge {
+  id           String   @id @default(cuid())
+  challengerId String
+  challengedId String
+  message      String?
+  status       String   @default("pending")
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  challenger   User     @relation("ChallengesSent", fields: [challengerId], references: [id])
+  challenged   User     @relation("ChallengesReceived", fields: [challengedId], references: [id])
+
+  @@index([challengedId, status])
+  @@index([challengerId])
+}
+
+// ── Web Push 구독 ────────────────────────────────
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// ── 예약 대기열 ─────────────────────────────────
+model ReservationWaitlist {
+  id        String   @id @default(cuid())
+  userId    String
+  tableId   String
+  date      String
+  startTime String
+  endTime   String
+  notified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  table     Table    @relation(fields: [tableId], references: [id])
+
+  @@index([tableId, date, startTime])
+  @@index([userId])
+}
+
+// ── 이벤트 시스템 ───────────────────────────────
+model Event {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String
+  config      Json
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  matches     Match[]
+
+  @@index([isActive, startDate, endDate])
+}
+
+// ── 팀 더블스 매치 ──────────────────────────────
+model TeamMatch {
+  id             String   @id @default(cuid())
+  team1Player1Id String
+  team1Player2Id String
+  team2Player1Id String
+  team2Player2Id String
+  winnerTeam     Int
+  t1Score        Int?
+  t2Score        Int?
+  status         String   @default("confirmed")
+  seasonId       String?
+  createdAt      DateTime @default(now())
+  team1Player1   User     @relation("T1P1", fields: [team1Player1Id], references: [id])
+  team1Player2   User     @relation("T1P2", fields: [team1Player2Id], references: [id])
+  team2Player1   User     @relation("T2P1", fields: [team2Player1Id], references: [id])
+  team2Player2   User     @relation("T2P2", fields: [team2Player2Id], references: [id])
+  season         Season?  @relation(fields: [seasonId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([seasonId])
+}
+
+// ── 주간 랭킹 스냅샷 ────────────────────────────
+model RankSnapshot {
+  id           String   @id @default(cuid())
+  userId       String
+  rank         Int
+  eloRating    Int
+  snapshotDate String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, snapshotDate])
+  @@index([snapshotDate])
 }

@@ -1,6 +1,3 @@
-// In-memory sliding-window rate limiter
-// 단일 인스턴스용 — 다중 인스턴스로 확장 시 Redis 등으로 교체
-
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
 
@@ -22,12 +19,33 @@ export function resetRateLimit(key: string) {
   buckets.delete(key);
 }
 
-// 메모리 누수 방지 — 주기적 정리
+const ipStore = new Map<string, { count: number; resetAt: number }>();
+
+export function checkIpRateLimit(
+  ip: string,
+  opts: { max: number; windowMs: number }
+): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = ipStore.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    ipStore.set(ip, { count: 1, resetAt: now + opts.windowMs });
+    return { allowed: true, remaining: opts.max - 1 };
+  }
+  if (entry.count >= opts.max) {
+    return { allowed: false, remaining: 0 };
+  }
+  entry.count++;
+  return { allowed: true, remaining: opts.max - entry.count };
+}
+
 if (typeof setInterval !== "undefined") {
   setInterval(() => {
     const now = Date.now();
     for (const [k, v] of buckets) {
       if (v.resetAt <= now) buckets.delete(k);
+    }
+    for (const [k, v] of ipStore) {
+      if (v.resetAt <= now) ipStore.delete(k);
     }
   }, 60_000).unref?.();
 }

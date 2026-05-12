@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { sendEmailIfEnabled } from "@/lib/email";
 
 export async function GET(
   req: NextRequest,
@@ -79,6 +80,37 @@ export async function PATCH(
     data: { status: "cancelled" },
     include: { table: true },
   });
+
+  const firstWaiting = await prisma.reservationWaitlist.findFirst({
+    where: {
+      tableId: reservation.tableId,
+      date: reservation.date,
+      startTime: reservation.startTime,
+      endTime: reservation.endTime,
+      notified: false,
+    },
+    orderBy: { createdAt: "asc" },
+    include: { user: { select: { email: true, emailNotify: true, name: true } } },
+  });
+
+  if (firstWaiting) {
+    await prisma.reservationWaitlist.update({
+      where: { id: firstWaiting.id },
+      data: { notified: true },
+    });
+    await sendEmailIfEnabled(
+      firstWaiting.user,
+      "[탁구존] 예약 자리가 생겼습니다!",
+      `<p>${firstWaiting.user.name}님, 대기 중이던 슬롯에 예약 자리가 생겼습니다!</p>
+       <ul>
+         <li>탁구대: <b>${updated.table.name}</b></li>
+         <li>날짜: <b>${reservation.date}</b></li>
+         <li>시간: <b>${reservation.startTime} ~ ${reservation.endTime}</b></li>
+       </ul>
+       <p>지금 바로 예약하세요! 🏓</p>
+       <a href="${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/reserve">예약하기</a>`
+    );
+  }
 
   return NextResponse.json(updated);
 }

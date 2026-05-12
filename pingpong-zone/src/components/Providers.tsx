@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { ToastProvider } from "@/components/Toast";
+import RealtimeProvider from "@/components/RealtimeProvider";
 
 function GlobalErrorHandler() {
   useEffect(() => {
@@ -41,7 +42,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ToastProvider>
       <GlobalErrorHandler />
-      {children}
+      <RealtimeProvider>
+        {children}
+      </RealtimeProvider>
     </ToastProvider>
   );
 }

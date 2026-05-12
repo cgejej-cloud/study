@@ -11,6 +11,8 @@ export default function EditProfilePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [emailNotify, setEmailNotify] = useState(true);
+  const [avatar, setAvatar] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,6 +31,7 @@ export default function EditProfilePage() {
         if (!data) { router.push("/login"); return; }
         setName(data.name || "");
         setPhone(data.phone || "");
+        setAvatar(data.avatar || "");
         // emailNotify는 세션 토큰에 없을 수 있어 사용자 조회 별도 호출 가능하나 기본 true
       });
   }, [router]);
@@ -50,6 +53,7 @@ export default function EditProfilePage() {
         name,
         phone,
         emailNotify,
+        avatar: avatar || null,
         currentPassword: currentPassword || undefined,
         newPassword: newPassword || undefined,
       }),
@@ -123,6 +127,33 @@ export default function EditProfilePage() {
             autoComplete="tel"
             className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold mb-1 text-gray-700">아바타 URL</label>
+          <input
+            type="url"
+            value={avatar}
+            onChange={(e) => { setAvatar(e.target.value); setAvatarError(false); }}
+            placeholder="https://example.com/avatar.jpg"
+            maxLength={500}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          {avatar && (
+            <div className="mt-2 flex items-center gap-3">
+              {avatarError ? (
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 text-xs">오류</div>
+              ) : (
+                <img
+                  src={avatar}
+                  alt="아바타 미리보기"
+                  onError={() => setAvatarError(true)}
+                  className="w-16 h-16 rounded-full object-cover border border-gray-200"
+                />
+              )}
+              <span className="text-xs text-gray-400">미리보기</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between border-t pt-4">

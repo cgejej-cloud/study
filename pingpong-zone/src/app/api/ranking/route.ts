@@ -6,10 +6,13 @@ const PLACEMENT_GAMES = 5;
 
 export async function GET() {
   try {
-  // 24시간 지난 pending 경기 자동 승인
   await autoConfirmExpired();
 
-  const users = await prisma.user.findMany({
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+  const [users, todaySnaps, yesterdaySnaps] = await Promise.all([
+    prisma.user.findMany({
     select: {
       id: true,
       name: true,
@@ -18,7 +21,19 @@ export async function GET() {
       matchesAsPlayer2: { where: { status: "confirmed" }, select: { winnerId: true, createdAt: true } },
     },
     orderBy: { eloRating: "desc" },
-  });
+  }),
+    prisma.rankSnapshot.findMany({
+      where: { snapshotDate: today },
+      select: { userId: true, rank: true },
+    }),
+    prisma.rankSnapshot.findMany({
+      where: { snapshotDate: yesterday },
+      select: { userId: true, rank: true },
+    }),
+  ]);
+
+  const todaySnapMap = new Map(todaySnaps.map((s) => [s.userId, s.rank]));
+  const yesterdaySnapMap = new Map(yesterdaySnaps.map((s) => [s.userId, s.rank]));
 
   const ranking = users.map((u) => {
     const allMatches = [...u.matchesAsPlayer1, ...u.matchesAsPlayer2]
@@ -39,6 +54,13 @@ export async function GET() {
       else break;
     }
 
+    const todayRank = todaySnapMap.get(u.id);
+    const yesterdayRank = yesterdaySnapMap.get(u.id);
+    let rankChange: number | null = null;
+    if (todayRank != null && yesterdayRank != null) {
+      rankChange = yesterdayRank - todayRank;
+    }
+
     return {
       id: u.id,
       name: u.name,
@@ -50,6 +72,7 @@ export async function GET() {
       placementLeft: isPlacing ? PLACEMENT_GAMES - total : 0,
       winRate: total > 0 ? Math.round((wins / total) * 100) : null,
       streak: streakType ? { type: streakType, count: streak } : null,
+      rankChange,
     };
   });
 

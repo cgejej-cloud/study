@@ -33,11 +33,18 @@ export default function NotificationBell() {
   const [data, setData] = useState<Payload | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
+  const [challengeCount, setChallengeCount] = useState(0);
+
   useEffect(() => {
     function load() {
       fetch("/api/me/notifications")
         .then((r) => r.ok ? r.json() : null)
         .then((d) => { if (d) setData(d); })
+        .catch(() => {});
+
+      fetch("/api/challenges")
+        .then((r) => r.ok ? r.json() : [])
+        .then((d) => { if (Array.isArray(d)) setChallengeCount(d.length); })
         .catch(() => {});
     }
     load();
@@ -53,7 +60,7 @@ export default function NotificationBell() {
     return () => document.removeEventListener("mousedown", onClick);
   }, [open]);
 
-  const unread = data?.totalUnread ?? 0;
+  const unread = (data?.totalUnread ?? 0) + challengeCount;
   const items = data
     ? [...data.pendingMatches, ...data.upcomingSoon, ...data.notices].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()

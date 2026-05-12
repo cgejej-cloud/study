@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { notifyOpponent, AUTO_CONFIRM_HOURS } from "@/lib/matchHelpers";
 import { PLACEMENT_GAMES, computeMatchEloChanges } from "@/lib/elo";
+import { getActiveEvents, applyEventEffects } from "@/lib/events";
 
 const DAILY_MATCH_LIMIT = 5;    // 하루 최대 경기 수
 const PAIR_DAILY_LIMIT = 1;     // 같은 상대와 하루 최대 경기 수
@@ -162,7 +163,7 @@ export async function POST(req: NextRequest) {
   }
 
   const winnerId = iWon ? me.id : opponent.id;
-  const { p1Change: p1EloChange, p2Change: p2EloChange } = computeMatchEloChanges({
+  const { p1Change: baseP1Change, p2Change: baseP2Change } = computeMatchEloChanges({
     myElo: me.eloRating,
     oppElo: opponent.eloRating,
     myGames,
@@ -170,17 +171,36 @@ export async function POST(req: NextRequest) {
     iWon,
   });
 
+  const activeEvents = await getActiveEvents();
+
+  const p1WinStreak = await prisma.match.count({
+    where: {
+      winnerId: me.id,
+      status: "confirmed",
+    },
+  });
+
+  const { p1Change: p1EloChange, p2Change: p2EloChange, multiplier: eloMultiplier, eventId } = applyEventEffects({
+    baseP1Change,
+    baseP2Change,
+    iWon,
+    events: activeEvents,
+    p1CurrentStreak: p1WinStreak,
+  });
+
   // pending 상태로 생성 — ELO는 상대 확인 시 적용
   const match = await prisma.match.create({
     data: {
-      player1Id:   me.id,
-      player2Id:   opponent.id,
+      player1Id:    me.id,
+      player2Id:    opponent.id,
       winnerId,
-      status:      "pending",
+      status:       "pending",
       p1Score,
       p2Score,
       p1EloChange,
       p2EloChange,
+      eloMultiplier,
+      ...(eventId ? { eventId } : {}),
     },
     include: {
       player1: { select: { id: true, name: true } },

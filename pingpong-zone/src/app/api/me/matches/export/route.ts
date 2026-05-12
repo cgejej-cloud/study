@@ -16,19 +16,23 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  const header = ["날짜", "상대", "결과", "내 포인트 변동", "상태", "시즌"];
+  const header = ["날짜", "상대", "결과", "세트스코어", "ELO변동", "시즌"];
   const rows = matches.map((m) => {
     const iAmP1 = m.player1Id === session.id;
     const opponent = iAmP1 ? m.player2.name : m.player1.name;
     const myChange = iAmP1 ? m.p1EloChange : m.p2EloChange;
+    const myScore = iAmP1 ? m.p1Score : m.p2Score;
+    const oppScore = iAmP1 ? m.p2Score : m.p1Score;
     const result = m.status === "confirmed" ? (m.winnerId === session.id ? "승" : "패") : m.status;
+    const score = myScore !== null && oppScore !== null ? `${myScore}-${oppScore}` : "";
     const date = new Date(m.createdAt).toISOString().slice(0, 10);
+    const eloChange = myChange !== null ? (myChange >= 0 ? `+${myChange}` : `${myChange}`) : "";
     return [
       date,
       opponent,
       result,
-      myChange ?? "",
-      m.status,
+      score,
+      eloChange,
       m.season?.name ?? "",
     ];
   });
@@ -45,7 +49,7 @@ export async function GET() {
   return new NextResponse(bom + csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="match-history-${session.id.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.csv"`,
+      "Content-Disposition": `attachment; filename="matches-${new Date().toISOString().slice(0, 10)}.csv"`,
     },
   });
 }

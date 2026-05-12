@@ -1,4 +1,7 @@
-// 이름 이니셜 기반 아바타 - 외부 이미지 의존 없이 일관된 색상 부여
+"use client";
+
+import { useState } from "react";
+
 const COLORS = [
   "bg-red-100 text-red-700",
   "bg-orange-100 text-orange-700",
@@ -24,11 +27,14 @@ export default function Avatar({
   name,
   size = "md",
   className = "",
+  avatar,
 }: {
   name: string;
   size?: "xs" | "sm" | "md" | "lg";
   className?: string;
+  avatar?: string;
 }) {
+  const [imgError, setImgError] = useState(false);
   const initials = (name || "?").trim().slice(0, 2).toUpperCase();
   const color = COLORS[hash(name) % COLORS.length];
   const sizeCls = {
@@ -37,6 +43,17 @@ export default function Avatar({
     md: "w-10 h-10 text-sm",
     lg: "w-16 h-16 text-xl",
   }[size];
+
+  if (avatar && !imgError) {
+    return (
+      <img
+        src={avatar}
+        alt={name}
+        onError={() => setImgError(true)}
+        className={`${sizeCls} rounded-full object-cover shrink-0 ${className}`}
+      />
+    );
+  }
 
   return (
     <div

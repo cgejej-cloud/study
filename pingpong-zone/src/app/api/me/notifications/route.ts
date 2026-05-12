@@ -12,7 +12,7 @@ export async function GET() {
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
 
-  const [pendingMatches, upcomingRes, notices] = await Promise.all([
+  const [pendingMatches, upcomingRes, notices, challenges] = await Promise.all([
     prisma.match.findMany({
       where: { player2Id: session.id, status: "pending" },
       select: {
@@ -34,6 +34,17 @@ export async function GET() {
       select: { id: true, title: true, isPinned: true, createdAt: true },
       orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
       take: 5,
+    }),
+    prisma.matchChallenge.findMany({
+      where: { challengedId: session.id, status: "pending", expiresAt: { gt: now } },
+      select: {
+        id: true,
+        createdAt: true,
+        message: true,
+        challenger: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
     }),
   ]);
 
@@ -65,6 +76,13 @@ export async function GET() {
       message: n.title,
       createdAt: n.createdAt,
     })),
-    totalUnread: pendingMatches.length + upcomingSoon.length,
+    challenges: challenges.map((c) => ({
+      id: c.id,
+      type: "challenge" as const,
+      title: "챌린지 도전장",
+      message: `${c.challenger.name}님이 챌린지를 신청했습니다${c.message ? ` · ${c.message}` : ""}`,
+      createdAt: c.createdAt,
+    })),
+    totalUnread: pendingMatches.length + upcomingSoon.length + challenges.length,
   });
 }

@@ -27,6 +27,29 @@ type PendingMatch = {
   winner:  { id: string; name: string };
 };
 
+type Challenge = {
+  id: string;
+  challengerId: string;
+  message: string | null;
+  expiresAt: string;
+  createdAt: string;
+  challenger: { id: string; name: string; eloRating: number };
+};
+
+type FollowCounts = { followerCount: number; followingCount: number };
+
+type TeamMatchItem = {
+  id: string;
+  createdAt: string;
+  winnerTeam: number;
+  t1Score: number | null;
+  t2Score: number | null;
+  team1Player1: { id: string; name: string };
+  team1Player2: { id: string; name: string };
+  team2Player1: { id: string; name: string };
+  team2Player2: { id: string; name: string };
+};
+
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 function formatDate(dateStr: string) {
@@ -48,6 +71,9 @@ export default function MyPage() {
   const [myId, setMyId] = useState("");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [pendingMatches, setPendingMatches] = useState<PendingMatch[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [followCounts, setFollowCounts] = useState<FollowCounts | null>(null);
+  const [teamMatches, setTeamMatches] = useState<TeamMatchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
 
@@ -55,30 +81,66 @@ export default function MyPage() {
     let cancelled = false;
 
     async function load() {
-      const [meRes, resRes, pendRes] = await Promise.all([
+      const [meRes, resRes, pendRes, chalRes, tmRes] = await Promise.all([
         fetch("/api/me"),
         fetch("/api/reservations"),
         fetch("/api/matches?pending=true"),
+        fetch("/api/challenges"),
+        fetch("/api/team-matches"),
       ]);
 
       if (resRes.status === 401) { router.push("/login"); return; }
 
-      const [me, resData, pendData] = await Promise.all([
+      const [me, resData, pendData, chalData, tmData] = await Promise.all([
         meRes.json(),
         resRes.json(),
         pendRes.json(),
+        chalRes.ok ? chalRes.json() : [],
+        tmRes.ok ? tmRes.json() : [],
       ]);
 
       if (cancelled) return;
-      if (me?.id) setMyId(me.id);
+      if (me?.id) {
+        setMyId(me.id);
+        fetch(`/api/follow/${me.id}`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((d) => { if (d && !cancelled) setFollowCounts({ followerCount: d.followerCount, followingCount: d.followingCount }); })
+          .catch(() => {});
+      }
       setReservations(Array.isArray(resData) ? resData : []);
       setPendingMatches(Array.isArray(pendData) ? pendData : []);
+      setChallenges(Array.isArray(chalData) ? chalData : []);
+      setTeamMatches(Array.isArray(tmData) ? tmData.slice(0, 3) : []);
       setLoading(false);
     }
 
     load();
     return () => { cancelled = true; };
   }, [tick, router]);
+
+  async function handleChallengeAction(challengeId: string, action: "accept" | "reject") {
+    const res = await fetch(`/api/challenges/${challengeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast.show(data.error || "처리에 실패했습니다.", "error");
+      return;
+    }
+
+    const data = await res.json();
+
+    if (action === "accept" && data.redirectUrl) {
+      router.push(data.redirectUrl);
+      return;
+    }
+
+    toast.show(action === "accept" ? "챌린지를 수락했습니다." : "챌린지를 거절했습니다.", "success");
+    setTick((t) => t + 1);
+  }
 
   async function handleCancel(r: Reservation) {
     const isSeries = r.isRecurring || !!r.parentId;
@@ -146,6 +208,72 @@ export default function MyPage() {
           </Link>
         </div>
       </div>
+
+      {/* 팔로우 현황 */}
+      {followCounts && (
+        <Link href="/mypage/following" className="card p-4 flex items-center gap-6 hover:opacity-80 transition-opacity">
+          <div className="text-center flex-1">
+            <p className="text-[22px] font-extrabold" style={{ color: "var(--jade-700)" }}>{followCounts.followingCount}</p>
+            <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>팔로잉</p>
+          </div>
+          <div className="w-px h-8" style={{ background: "var(--border)" }} />
+          <div className="text-center flex-1">
+            <p className="text-[22px] font-extrabold" style={{ color: "var(--jade-700)" }}>{followCounts.followerCount}</p>
+            <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>팔로워</p>
+          </div>
+        </Link>
+      )}
+
+      {/* ── 경기 챌린지 알림 ─────────────────────────────────── */}
+      {!loading && challenges.length > 0 && (
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="font-bold text-[14px]" style={{ color: "var(--text-1)" }}>경기 신청</h2>
+            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {challenges.length}
+            </span>
+          </div>
+          <div className="space-y-2">
+            {challenges.map((c) => (
+              <div
+                key={c.id}
+                className="card p-4"
+                style={{ background: "linear-gradient(135deg, #fdf4ff 0%, #eff6ff 100%)", border: "1px solid #e9d5ff" }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>
+                      ⚔️ <span style={{ color: "#7c3aed" }}>{c.challenger.name}</span>님이 경기를 신청했습니다
+                    </p>
+                    <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>
+                      ELO {c.challenger.eloRating}점 · {timeAgo(c.createdAt)}
+                    </p>
+                    {c.message && (
+                      <p className="text-[12px] mt-1 italic" style={{ color: "var(--text-2)" }}>"{c.message}"</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleChallengeAction(c.id, "accept")}
+                      className="btn btn-jade"
+                      style={{ fontSize: "12px" }}
+                    >
+                      수락
+                    </button>
+                    <button
+                      onClick={() => handleChallengeAction(c.id, "reject")}
+                      className="btn"
+                      style={{ fontSize: "12px" }}
+                    >
+                      거절
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── 확인 대기 중인 경기 ─────────────────────────────── */}
       {!loading && pendingMatches.length > 0 && (
@@ -268,6 +396,65 @@ export default function MyPage() {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* ── 더블스 최근 기록 ─────────────────────────────────── */}
+      {!loading && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="section-title">팀 더블스 최근 기록</h2>
+            <Link href="/mypage/team-matches" className="text-xs text-green-700 font-semibold hover:underline">
+              더 보기 →
+            </Link>
+          </div>
+          {teamMatches.length === 0 ? (
+            <div className="card p-5 text-center">
+              <p className="text-sm text-gray-400">더블스 기록이 없습니다.</p>
+              <Link href="/ranking/doubles" className="inline-block mt-2 text-sm text-green-700 font-semibold hover:underline">
+                더블스 기록 입력 →
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {teamMatches.map((m) => {
+                const myTeam = [m.team1Player1.id, m.team1Player2.id].includes(myId) ? 1 : 2;
+                const iWon = m.winnerTeam === myTeam;
+                const partner = myTeam === 1
+                  ? (m.team1Player1.id === myId ? m.team1Player2 : m.team1Player1)
+                  : (m.team2Player1.id === myId ? m.team2Player2 : m.team2Player1);
+                const opp1 = myTeam === 1 ? m.team2Player1 : m.team1Player1;
+                const opp2 = myTeam === 1 ? m.team2Player2 : m.team1Player2;
+                return (
+                  <div key={m.id} className="card px-4 py-3 flex items-center gap-3">
+                    <div className={`w-1.5 h-10 rounded-full shrink-0 ${iWon ? "bg-blue-400" : "bg-red-300"}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-800">
+                        <span className="text-green-700">나</span>
+                        <span className="text-gray-400"> &amp; </span>
+                        <span>{partner.name}</span>
+                        <span className="text-gray-400 mx-1.5">vs</span>
+                        <span>{opp1.name}</span>
+                        <span className="text-gray-400"> &amp; </span>
+                        <span>{opp2.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`chip ${iWon ? "bg-blue-50 text-blue-600" : "bg-red-50 text-red-500"}`}>
+                          {iWon ? "승" : "패"}
+                        </span>
+                        {m.t1Score !== null && m.t2Score !== null && (
+                          <span className="text-xs text-gray-500 font-mono">
+                            {myTeam === 1 ? m.t1Score : m.t2Score}-{myTeam === 1 ? m.t2Score : m.t1Score}
+                          </span>
+                        )}
+                        <span className="text-xs text-gray-400">{timeAgo(m.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
     </div>

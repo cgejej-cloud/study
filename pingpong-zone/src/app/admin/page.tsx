@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useToast } from "@/components/Toast";
 
 type Reservation = {
   id: string;
@@ -16,10 +17,12 @@ type Reservation = {
 
 export default function AdminPage() {
   const router = useRouter();
+  const toast = useToast();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split("T")[0]);
   const [tick, setTick] = useState(0);
+  const [snapshotting, setSnapshotting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +41,18 @@ export default function AdminPage() {
     load();
     return () => { cancelled = true; };
   }, [tick, router]);
+
+  async function handleRankSnapshot() {
+    setSnapshotting(true);
+    const res = await fetch("/api/admin/rank-snapshot", { method: "POST" });
+    setSnapshotting(false);
+    if (res.ok) {
+      const data = await res.json();
+      toast.show(`오늘 랭킹 스냅샷 저장 완료 (${data.snapshotted}명)`, "success");
+    } else {
+      toast.show("스냅샷 저장에 실패했습니다.", "error");
+    }
+  }
 
   async function handleCancel(id: string) {
     if (!confirm("이 예약을 취소하시겠습니까?")) return;
@@ -85,6 +100,10 @@ export default function AdminPage() {
           <div className="text-3xl mb-1">🏆</div>
           <div className="font-semibold text-gray-700">토너먼트</div>
         </Link>
+        <Link href="/admin/events" className="card p-5 text-center hover:opacity-90 transition-opacity">
+          <div className="text-3xl mb-1">⚡</div>
+          <div className="font-semibold text-gray-700">이벤트 관리</div>
+        </Link>
         <div className="card p-5 text-center">
           <div className="text-3xl font-bold text-green-700">{confirmed.length}</div>
           <div className="text-gray-500 mt-1 text-sm">선택 날짜 예약</div>
@@ -95,6 +114,16 @@ export default function AdminPage() {
           </div>
           <div className="text-gray-500 mt-1 text-sm">전체 확정 예약</div>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <button
+          onClick={handleRankSnapshot}
+          disabled={snapshotting}
+          className="btn btn-jade"
+        >
+          {snapshotting ? "저장 중..." : "📸 랭킹 스냅샷 저장"}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
