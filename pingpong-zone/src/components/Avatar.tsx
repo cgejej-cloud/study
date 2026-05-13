@@ -23,20 +23,29 @@ function hash(s: string) {
   return Math.abs(h);
 }
 
+function textColorForBg(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? "rgba(0,0,0,0.75)" : "#fff";
+}
+
 export default function Avatar({
   name,
   size = "md",
   className = "",
   avatar,
+  profileColor,
 }: {
   name: string;
   size?: "xs" | "sm" | "md" | "lg";
   className?: string;
-  avatar?: string;
+  avatar?: string | null;
+  profileColor?: string | null;
 }) {
   const [imgError, setImgError] = useState(false);
   const initials = (name || "?").trim().slice(0, 2).toUpperCase();
-  const color = COLORS[hash(name) % COLORS.length];
   const sizeCls = {
     xs: "w-6 h-6 text-[10px]",
     sm: "w-8 h-8 text-xs",
@@ -55,6 +64,19 @@ export default function Avatar({
     );
   }
 
+  if (profileColor) {
+    return (
+      <div
+        className={`${sizeCls} rounded-full flex items-center justify-center font-bold shrink-0 ${className}`}
+        style={{ background: profileColor, color: textColorForBg(profileColor) }}
+        aria-hidden="true"
+      >
+        {initials}
+      </div>
+    );
+  }
+
+  const color = COLORS[hash(name) % COLORS.length];
   return (
     <div
       className={`${sizeCls} ${color} rounded-full flex items-center justify-center font-bold shrink-0 ${className}`}

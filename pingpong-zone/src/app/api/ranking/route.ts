@@ -16,6 +16,9 @@ export async function GET() {
     select: {
       id: true,
       name: true,
+      nickname: true,
+      profileColor: true,
+      avatar: true,
       eloRating: true,
       matchesAsPlayer1: { where: { status: "confirmed" }, select: { winnerId: true, createdAt: true } },
       matchesAsPlayer2: { where: { status: "confirmed" }, select: { winnerId: true, createdAt: true } },
@@ -63,8 +66,10 @@ export async function GET() {
 
     return {
       id: u.id,
-      name: u.name,
+      name: u.nickname ?? u.name,
       eloRating: u.eloRating,
+      profileColor: u.profileColor ?? null,
+      avatar: u.avatar ?? null,
       wins,
       losses,
       total,

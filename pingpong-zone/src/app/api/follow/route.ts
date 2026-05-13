@@ -13,22 +13,22 @@ export async function GET(req: NextRequest) {
     const rows = await prisma.follow.findMany({
       where: { followerId: session.id },
       include: {
-        following: { select: { id: true, name: true, eloRating: true, avatar: true } },
+        following: { select: { id: true, name: true, nickname: true, eloRating: true, avatar: true, profileColor: true } },
       },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json(rows.map((r) => r.following));
+    return NextResponse.json(rows.map((r) => ({ ...r.following, name: r.following.nickname ?? r.following.name })));
   }
 
   if (type === "followers") {
     const rows = await prisma.follow.findMany({
       where: { followingId: session.id },
       include: {
-        follower: { select: { id: true, name: true, eloRating: true, avatar: true } },
+        follower: { select: { id: true, name: true, nickname: true, eloRating: true, avatar: true, profileColor: true } },
       },
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json(rows.map((r) => r.follower));
+    return NextResponse.json(rows.map((r) => ({ ...r.follower, name: r.follower.nickname ?? r.follower.name })));
   }
 
   return NextResponse.json({ error: "type 쿼리가 필요합니다. (following | followers)" }, { status: 400 });

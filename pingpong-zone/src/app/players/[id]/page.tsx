@@ -9,6 +9,10 @@ import { useToast } from "@/components/Toast";
 type Player = {
   id: string;
   name: string;
+  nickname: string | null;
+  bio: string | null;
+  profileColor: string | null;
+  avatar: string | null;
   eloRating: number;
   joinedAt: string;
   stats: {
@@ -249,10 +253,13 @@ export default function PlayerProfilePage() {
 
       {/* 프로필 헤더 */}
       <div className="card p-5 flex items-center gap-4">
-        <Avatar name={player.name} size="lg" />
+        <Avatar name={player.nickname ?? player.name} size="lg" avatar={player.avatar ?? undefined} profileColor={player.profileColor ?? undefined} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="font-extrabold text-[18px]" style={{ color: "var(--text-1)" }}>{player.name}</h2>
+            <h2 className="font-extrabold text-[18px]" style={{ color: "var(--text-1)" }}>{player.nickname ?? player.name}</h2>
+            {player.nickname && (
+              <span className="text-[11px]" style={{ color: "var(--text-3)" }}>({player.name})</span>
+            )}
             <span className="chip text-[11px] font-bold" style={{ color: tier.color }}>
               {tier.icon} {tier.name}
             </span>
@@ -260,6 +267,9 @@ export default function PlayerProfilePage() {
               <span className="chip" style={{ background: "#fff7ed", color: "#c2410c" }}>🔰 신입 보정</span>
             )}
           </div>
+          {player.bio && (
+            <p className="text-[12px] mt-0.5 italic" style={{ color: "var(--text-2)" }}>{player.bio}</p>
+          )}
           <p className="text-[13px] mt-0.5" style={{ color: "var(--text-2)" }}>
             현재 포인트 <span className="font-bold" style={{ color: "var(--jade-700)" }}>{player.eloRating}점</span>
           </p>

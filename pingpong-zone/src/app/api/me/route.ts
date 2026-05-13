@@ -2,34 +2,41 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession, createSession, deleteSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { validateName, validatePassword, validatePhone } from "@/lib/validation";
+import { validateName, validatePassword, validatePhone, validateNickname, validateBio, validateProfileColor } from "@/lib/validation";
 
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json(null);
 
-  // 권한 변경 즉시 반영: DB role과 세션 role이 다르면 세션 갱신
   const user = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, role: true, nickname: true, bio: true, profileColor: true, phone: true, emailNotify: true, avatar: true },
   });
   if (!user) return NextResponse.json(null);
   if (user.role !== session.role || user.name !== session.name) {
     await createSession({ id: user.id, name: user.name, email: user.email, role: user.role });
-    return NextResponse.json({ id: user.id, name: user.name, email: user.email, role: user.role });
   }
 
-  return NextResponse.json(session);
+  return NextResponse.json(user);
 }
 
 export async function PATCH(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
-  const { name, phone, currentPassword, newPassword, emailNotify, avatar } = await req.json();
+  const { name, nickname, bio, profileColor, phone, currentPassword, newPassword, emailNotify, avatar } = await req.json();
 
   if (!validateName(name)) {
     return NextResponse.json({ error: "이름은 2~30자로 입력해주세요." }, { status: 400 });
+  }
+  if (!validateNickname(nickname)) {
+    return NextResponse.json({ error: "닉네임은 2~20자로 입력해주세요." }, { status: 400 });
+  }
+  if (!validateBio(bio)) {
+    return NextResponse.json({ error: "소개는 140자 이하로 입력해주세요." }, { status: 400 });
+  }
+  if (!validateProfileColor(profileColor)) {
+    return NextResponse.json({ error: "유효하지 않은 프로필 색상입니다." }, { status: 400 });
   }
   if (phone && !validatePhone(phone)) {
     return NextResponse.json({ error: "올바른 전화번호 형식이 아닙니다." }, { status: 400 });
@@ -58,6 +65,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   const updateData: Record<string, unknown> = { name: name.trim() };
+  if (nickname !== undefined) updateData.nickname = nickname?.trim() || null;
+  if (bio !== undefined) updateData.bio = bio?.trim() || null;
+  if (profileColor !== undefined) updateData.profileColor = profileColor || null;
   if (phone !== undefined) updateData.phone = phone || null;
   if (newPassword) updateData.password = await bcrypt.hash(newPassword, 10);
   if (typeof emailNotify === "boolean") updateData.emailNotify = emailNotify;

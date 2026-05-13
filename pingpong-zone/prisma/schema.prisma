@@ -17,6 +17,9 @@ model User {
   eloRating           Int                   @default(1000)
   emailNotify         Boolean               @default(true)
   avatar              String?
+  nickname            String?
+  bio                 String?
+  profileColor        String?
   createdAt           DateTime              @default(now())
   reservations        Reservation[]
   matchesAsPlayer1    Match[]               @relation("Player1Matches")

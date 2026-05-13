@@ -14,6 +14,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       select: {
         id: true,
         name: true,
+        nickname: true,
+        bio: true,
+        profileColor: true,
+        avatar: true,
         eloRating: true,
         createdAt: true,
         matchesAsPlayer1: {
@@ -117,6 +121,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     return NextResponse.json({
       id: user.id,
       name: user.name,
+      nickname: user.nickname ?? null,
+      bio: user.bio ?? null,
+      profileColor: user.profileColor ?? null,
+      avatar: user.avatar ?? null,
       eloRating: user.eloRating,
       joinedAt: user.createdAt,
       stats: {
