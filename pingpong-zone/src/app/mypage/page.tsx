@@ -221,6 +221,13 @@ export default function MyPage() {
             <p className="text-[22px] font-extrabold" style={{ color: "var(--jade-700)" }}>{followCounts.followerCount}</p>
             <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>팔로워</p>
           </div>
+          <div className="w-px h-8" style={{ background: "var(--border)" }} />
+          <div className="text-center flex-1 relative">
+            <p className="text-[22px] font-extrabold" style={{ color: challenges.length > 0 ? "#7c3aed" : "var(--jade-700)" }}>
+              {challenges.length}
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>경기 신청</p>
+          </div>
         </Link>
       )}
 

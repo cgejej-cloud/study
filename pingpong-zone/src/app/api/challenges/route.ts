@@ -4,11 +4,29 @@ import { prisma } from "@/lib/prisma";
 import { sendEmailIfEnabled } from "@/lib/email";
 import { sendPushToUser } from "@/lib/webpush";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const type = searchParams.get("type");
   const now = new Date();
+
+  if (type === "sent") {
+    const challenges = await prisma.matchChallenge.findMany({
+      where: {
+        challengerId: session.id,
+        status: "pending",
+        expiresAt: { gt: now },
+      },
+      include: {
+        challenged: { select: { id: true, name: true, eloRating: true, avatar: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(challenges);
+  }
+
   const challenges = await prisma.matchChallenge.findMany({
     where: {
       challengedId: session.id,
