@@ -39,6 +39,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "종료일은 시작일보다 늦어야 합니다." }, { status: 400 });
   }
 
+  // 같은 타입의 겹치는 이벤트 검사
+  const overlapping = await prisma.event.findFirst({
+    where: {
+      type,
+      isActive: true,
+      startDate: { lt: end },
+      endDate: { gt: start },
+    },
+  });
+  if (overlapping) {
+    return NextResponse.json(
+      { error: `같은 타입의 활성 이벤트(${overlapping.name})와 기간이 겹칩니다.` },
+      { status: 409 }
+    );
+  }
+
   const event = await prisma.event.create({
     data: {
       name,

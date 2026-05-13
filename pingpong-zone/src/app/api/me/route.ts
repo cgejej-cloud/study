@@ -7,6 +7,18 @@ import { validateName, validatePassword, validatePhone } from "@/lib/validation"
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json(null);
+
+  // 권한 변경 즉시 반영: DB role과 세션 role이 다르면 세션 갱신
+  const user = await prisma.user.findUnique({
+    where: { id: session.id },
+    select: { id: true, name: true, email: true, role: true },
+  });
+  if (!user) return NextResponse.json(null);
+  if (user.role !== session.role || user.name !== session.name) {
+    await createSession({ id: user.id, name: user.name, email: user.email, role: user.role });
+    return NextResponse.json({ id: user.id, name: user.name, email: user.email, role: user.role });
+  }
+
   return NextResponse.json(session);
 }
 

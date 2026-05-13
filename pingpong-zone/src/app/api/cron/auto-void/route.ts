@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { verifyCronSecret } from "@/lib/cronAuth";
 
 const DISPUTE_TIMEOUT_DAYS = 7;
 
-// Vercel Cron: 매일 새벽 1시 실행
-// vercel.json: { "path": "/api/cron/auto-void", "schedule": "0 1 * * *" }
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const err = verifyCronSecret(req);
+  if (err) return err;
 
   const cutoff = new Date(Date.now() - DISPUTE_TIMEOUT_DAYS * 24 * 60 * 60 * 1000);
 

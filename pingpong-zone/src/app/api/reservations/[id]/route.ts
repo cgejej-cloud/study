@@ -81,7 +81,7 @@ export async function PATCH(
     include: { table: true },
   });
 
-  const firstWaiting = await prisma.reservationWaitlist.findFirst({
+  const waitingList = await prisma.reservationWaitlist.findMany({
     where: {
       tableId: reservation.tableId,
       date: reservation.date,
@@ -93,22 +93,27 @@ export async function PATCH(
     include: { user: { select: { email: true, emailNotify: true, name: true } } },
   });
 
-  if (firstWaiting) {
-    await prisma.reservationWaitlist.update({
-      where: { id: firstWaiting.id },
+  if (waitingList.length > 0) {
+    await prisma.reservationWaitlist.updateMany({
+      where: { id: { in: waitingList.map((w) => w.id) } },
       data: { notified: true },
     });
-    await sendEmailIfEnabled(
-      firstWaiting.user,
-      "[탁구존] 예약 자리가 생겼습니다!",
-      `<p>${firstWaiting.user.name}님, 대기 중이던 슬롯에 예약 자리가 생겼습니다!</p>
-       <ul>
-         <li>탁구대: <b>${updated.table.name}</b></li>
-         <li>날짜: <b>${reservation.date}</b></li>
-         <li>시간: <b>${reservation.startTime} ~ ${reservation.endTime}</b></li>
-       </ul>
-       <p>지금 바로 예약하세요! 🏓</p>
-       <a href="${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"}/reserve">예약하기</a>`
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    await Promise.all(
+      waitingList.map((w) =>
+        sendEmailIfEnabled(
+          w.user,
+          "[탁구존] 예약 자리가 생겼습니다!",
+          `<p>${w.user.name}님, 대기 중이던 슬롯에 예약 자리가 생겼습니다!</p>
+           <ul>
+             <li>탁구대: <b>${updated.table.name}</b></li>
+             <li>날짜: <b>${reservation.date}</b></li>
+             <li>시간: <b>${reservation.startTime} ~ ${reservation.endTime}</b></li>
+           </ul>
+           <p>지금 바로 예약하세요! 🏓</p>
+           <a href="${baseUrl}/reserve">예약하기</a>`
+        )
+      )
     );
   }
 

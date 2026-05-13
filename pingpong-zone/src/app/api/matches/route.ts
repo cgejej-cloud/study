@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { notifyOpponent, AUTO_CONFIRM_HOURS } from "@/lib/matchHelpers";
 import { PLACEMENT_GAMES, computeMatchEloChanges } from "@/lib/elo";
+import { kstTodayStart } from "@/lib/time";
 import { getActiveEvents, applyEventEffects } from "@/lib/events";
 
 const DAILY_MATCH_LIMIT = 5;    // 하루 최대 경기 수
@@ -91,8 +92,7 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date();
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
+  const todayStart = kstTodayStart();
 
   // ── 악용 방지 검사 ──────────────────────────────────────────
 

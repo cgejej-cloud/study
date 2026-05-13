@@ -21,7 +21,7 @@ function isValidOrigin(req: NextRequest): boolean {
   if (!origin) return true; // same-origin 요청은 origin 헤더 없음
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  const vercelUrl = process.env.VERCEL_URL; // Vercel이 자동으로 설정하는 배포 URL
+  const vercelUrl = process.env.VERCEL_URL;
   const allowedOrigins = [
     baseUrl,
     vercelUrl ? `https://${vercelUrl}` : null,
@@ -31,8 +31,6 @@ function isValidOrigin(req: NextRequest): boolean {
 
   try {
     const requestOrigin = new URL(origin).origin;
-    // *.vercel.app 도메인은 모두 허용
-    if (requestOrigin.endsWith(".vercel.app")) return true;
     return allowedOrigins.some((allowed) => new URL(allowed).origin === requestOrigin);
   } catch {
     return false;

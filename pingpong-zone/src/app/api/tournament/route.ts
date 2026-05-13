@@ -39,11 +39,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "토너먼트 이름을 입력해주세요." }, { status: 400 });
   }
 
+  const parsedMax = maxPlayers ? Number(maxPlayers) : 8;
+  if (!Number.isInteger(parsedMax) || parsedMax < 2 || parsedMax > 128) {
+    return NextResponse.json({ error: "참가자 수는 2~128 사이여야 합니다." }, { status: 400 });
+  }
+
   const tournament = await prisma.tournament.create({
     data: {
       name: name.trim(),
       description: description?.trim() || null,
-      maxPlayers: maxPlayers ? Number(maxPlayers) : 8,
+      maxPlayers: parsedMax,
     },
   });
 

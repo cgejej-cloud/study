@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { verifyCronSecret } from "@/lib/cronAuth";
+import { kstDateString } from "@/lib/time";
 
-// Vercel Cron: 매일 자정 실행
-// vercel.json: { "path": "/api/cron/rank-snapshot", "schedule": "0 0 * * *" }
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const err = verifyCronSecret(req);
+  if (err) return err;
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = kstDateString();
 
   const users = await prisma.user.findMany({
     select: { id: true, eloRating: true },
