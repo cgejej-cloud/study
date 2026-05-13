@@ -317,6 +317,13 @@ export default function PlayerProfilePage() {
               >
                 {challengeSent ? "신청 완료!" : challengeLoading ? "신청 중..." : "⚔️ 경기 신청"}
               </button>
+              <Link
+                href={`/scoreboard?opponent=${id}`}
+                className="btn btn-jade"
+                style={{ fontSize: "12px" }}
+              >
+                🏓 스코어보드
+              </Link>
             </div>
           )}
         </div>
