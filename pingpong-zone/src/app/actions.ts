@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
@@ -25,7 +24,10 @@ export async function login(formData: FormData) {
     return { error: `로그인 시도가 너무 많습니다. ${Math.ceil(limit.retryAfter / 60)}분 후 다시 시도해주세요.` };
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, name: true, email: true, role: true, password: true },
+  });
   if (!user || !user.password) {
     return { error: "이메일 또는 비밀번호가 올바르지 않습니다." };
   }
@@ -35,9 +37,7 @@ export async function login(formData: FormData) {
     return { error: "이메일 또는 비밀번호가 올바르지 않습니다." };
   }
 
-  // 성공 시 레이트 리밋 카운트 초기화
   resetRateLimit(limitKey);
-
   await createSession({ id: user.id, name: user.name, email: user.email, role: user.role });
-  redirect("/");
+  return { success: true };
 }
