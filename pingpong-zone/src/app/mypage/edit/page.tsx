@@ -19,6 +19,7 @@ export default function EditProfilePage() {
   const [emailNotify, setEmailNotify] = useState(true);
 
   // 탁구 정보
+  const [title, setTitle] = useState("");
   const [racketType, setRacketType] = useState("");
   const [playStyle, setPlayStyle] = useState("");
 
@@ -52,6 +53,7 @@ export default function EditProfilePage() {
         setPhone(data.phone || "");
         setAvatar(data.avatar || "");
         setProfileColor(data.profileColor || "");
+        setTitle(data.title || "");
         setRacketType(data.racketType || "");
         setPlayStyle(data.playStyle || "");
         if (typeof data.emailNotify === "boolean") setEmailNotify(data.emailNotify);
@@ -74,6 +76,7 @@ export default function EditProfilePage() {
         phone,
         emailNotify,
         avatar: avatar || null,
+        title: title || null,
         racketType: racketType || null,
         playStyle: playStyle || null,
       }),
@@ -163,6 +166,9 @@ export default function EditProfilePage() {
           </label>
         </div>
         <div className="min-w-0">
+          {title && (
+            <p className="text-[11px] font-semibold mb-0.5" style={{ color: "var(--jade-600)" }}>{title}</p>
+          )}
           <p className="font-extrabold text-[18px]" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
             {displayName}
           </p>
@@ -196,6 +202,23 @@ export default function EditProfilePage() {
         <form onSubmit={handleSaveProfile} className="space-y-5">
           {/* 닉네임 */}
           <div className="card p-5 space-y-4">
+            <div>
+              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>
+                칭호{" "}
+                <span className="text-[11px] font-normal" style={{ color: title.length > 12 ? "#e11d48" : "var(--text-3)" }}>
+                  {title.length}/16 · 닉네임 앞에 표시
+                </span>
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={16}
+                placeholder="ex) 탁구왕, 서브의신, 수비수 …"
+                className="w-full rounded-xl px-3 py-2.5 text-[14px] focus:outline-none"
+                style={{ background: "var(--jade-50)", border: "1.5px solid var(--border)" }}
+              />
+            </div>
             <div>
               <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>
                 닉네임 <span className="text-[11px] font-normal" style={{ color: "var(--text-3)" }}>(공개 표시 이름, 선택)</span>

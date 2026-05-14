@@ -15,6 +15,7 @@ type HeaderUser = {
   nickname?: string | null;
   avatar?: string | null;
   profileColor?: string | null;
+  title?: string | null;
 };
 
 function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
@@ -131,8 +132,13 @@ export default function Header() {
                   avatar={session.avatar ?? undefined}
                   profileColor={session.profileColor ?? undefined}
                 />
-                <span className="text-[13px] font-semibold text-white/90 max-w-[80px] truncate hidden sm:inline">
-                  {session.nickname ?? session.name}
+                <span className="hidden sm:flex flex-col leading-none">
+                  {session.title && (
+                    <span className="text-[9px] font-semibold" style={{ color: "var(--jade-300)" }}>{session.title}</span>
+                  )}
+                  <span className="text-[13px] font-semibold text-white/90 max-w-[80px] truncate">
+                    {session.nickname ?? session.name}
+                  </span>
                 </span>
                 {pendingCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">

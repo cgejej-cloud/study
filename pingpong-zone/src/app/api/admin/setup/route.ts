@@ -130,9 +130,10 @@ export async function POST(req: NextRequest) {
   await run(`ALTER TABLE "MatchChallenge" ADD COLUMN IF NOT EXISTS "reservationId" TEXT`, "MatchChallenge.reservationId column");
   await run(`ALTER TABLE "MatchChallenge" ADD CONSTRAINT "MatchChallenge_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation"("id") ON DELETE SET NULL ON UPDATE CASCADE`, "MatchChallenge FK reservation");
 
-  // Migration 0005: racketType / playStyle on User
+  // Migration 0005: racketType / playStyle / title on User
   await run(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "racketType" TEXT`, "User.racketType column");
   await run(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "playStyle" TEXT`, "User.playStyle column");
+  await run(`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "title" TEXT`, "User.title column");
 
   // 어드민 계정 생성 (ADMIN_EMAIL / ADMIN_PASSWORD 환경변수 필요)
   const adminEmail = process.env.ADMIN_EMAIL;

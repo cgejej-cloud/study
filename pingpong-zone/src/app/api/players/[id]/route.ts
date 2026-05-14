@@ -20,6 +20,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
         avatar: true,
         racketType: true,
         playStyle: true,
+        title: true,
         eloRating: true,
         createdAt: true,
         matchesAsPlayer1: {
@@ -129,6 +130,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       avatar: user.avatar ?? null,
       racketType: user.racketType ?? null,
       playStyle: user.playStyle ?? null,
+      title: user.title ?? null,
       eloRating: user.eloRating,
       joinedAt: user.createdAt,
       stats: {

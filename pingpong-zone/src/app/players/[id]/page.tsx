@@ -31,6 +31,7 @@ type Player = {
   avatar: string | null;
   racketType: string | null;
   playStyle: string | null;
+  title: string | null;
   eloRating: number;
   joinedAt: string;
   stats: {
@@ -251,6 +252,9 @@ if (error) {
       <div className="card p-5 flex items-center gap-4">
         <Avatar name={player.nickname ?? player.name} size="lg" avatar={player.avatar ?? undefined} profileColor={player.profileColor ?? undefined} />
         <div className="min-w-0 flex-1">
+          {player.title && (
+            <p className="text-[11px] font-semibold mb-0.5" style={{ color: "var(--jade-600)" }}>{player.title}</p>
+          )}
           <div className="flex items-center gap-2 flex-wrap">
             <h2 className="font-extrabold text-[18px]" style={{ color: "var(--text-1)" }}>{player.nickname ?? player.name}</h2>
             {player.nickname && (
