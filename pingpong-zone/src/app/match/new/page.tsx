@@ -131,30 +131,27 @@ function MatchNewInner() {
 
     setSubmitting(true);
     try {
-      // 1) 경기 신청
-      const cRes = await fetch("/api/challenges", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          challengedId: opponent.id,
-          message: message.trim() || `${date} ${selectedStart}~${selectedEnd} 경기 신청합니다!`,
-        }),
-      });
-      const cData = await cRes.json();
-      if (!cRes.ok) { toast.show(cData.error || "경기 신청 실패", "error"); return; }
-
-      // 2) 탁구대 예약
+      // 1) 탁구대 예약 먼저 (ID를 챌린지에 연결하기 위해)
       const rRes = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tableId: selectedTableId, date, startTime: selectedStart, endTime: selectedEnd }),
       });
       const rData = await rRes.json();
-      if (!rRes.ok) {
-        toast.show(`경기 신청은 완료됐지만 예약 실패: ${rData.error || "알 수 없는 오류"}`, "error");
-        setTimeout(() => router.push("/mypage"), 1500);
-        return;
-      }
+      if (!rRes.ok) { toast.show(rData.error || "예약 실패", "error"); return; }
+
+      // 2) 경기 신청 (예약 ID 연결)
+      const cRes = await fetch("/api/challenges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          challengedId: opponent.id,
+          reservationId: rData.id,
+          message: message.trim() || `${date} ${selectedStart}~${selectedEnd} 경기 신청합니다!`,
+        }),
+      });
+      const cData = await cRes.json();
+      if (!cRes.ok) { toast.show(cData.error || "경기 신청 실패", "error"); return; }
 
       toast.show("경기 신청과 탁구대 예약이 완료됐습니다! 🏓", "success");
       setTimeout(() => router.push("/mypage"), 1200);

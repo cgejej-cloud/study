@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
-  const { challengedId, message } = await req.json();
+  const { challengedId, message, reservationId } = await req.json();
 
   if (!challengedId) {
     return NextResponse.json({ error: "challengedId가 필요합니다." }, { status: 400 });
@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
       message: message ?? null,
       status: "pending",
       expiresAt,
+      reservationId: reservationId ?? null,
     },
   });
 

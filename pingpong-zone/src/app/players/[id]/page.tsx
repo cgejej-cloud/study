@@ -304,13 +304,6 @@ if (error) {
               >
                 ⚔️ 경기 신청 + 예약
               </Link>
-              <Link
-                href={`/scoreboard?opponent=${id}`}
-                className="btn btn-jade"
-                style={{ fontSize: "12px" }}
-              >
-                🏓 스코어보드
-              </Link>
             </div>
           )}
         </div>

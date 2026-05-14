@@ -238,20 +238,6 @@ function RecordMatchInner() {
           </div>
         </div>
 
-        {selectedOpponent && (
-          <div className="bg-jade-50 rounded-xl p-3 flex items-center justify-between text-sm" style={{ background: "var(--jade-50)", border: "1px solid var(--jade-100)" }}>
-            <span style={{ color: "var(--text-2)" }}>
-              경기 중이라면 스코어보드를 먼저 사용하세요
-            </span>
-            <Link
-              href={`/scoreboard?opponent=${selectedOpponent.id}`}
-              className="btn btn-jade"
-              style={{ fontSize: "12px", whiteSpace: "nowrap" }}
-            >
-              🏓 스코어보드
-            </Link>
-          </div>
-        )}
 
         {selectedOpponent && (
           <div>

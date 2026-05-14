@@ -13,11 +13,18 @@ type Snapshot = {
   setHistory: SetResult[];
 };
 
+type ActiveMatch = {
+  challengeId: string;
+  opponent: { id: string; name: string };
+  reservation: { date: string; startTime: string; endTime: string; table: { name: string } } | null;
+};
+
 function ScoreboardInner() {
   const params = useSearchParams();
-  const opponentId = params?.get("opponent") ?? "";
   const bestOf = Math.max(1, Number(params?.get("sets") ?? 5));
   const setsToWin = Math.ceil(bestOf / 2);
+
+  const [activeMatch, setActiveMatch] = useState<ActiveMatch | null | undefined>(undefined);
 
   const [p1Name, setP1Name] = useState("나");
   const [p2Name, setP2Name] = useState("상대");
@@ -31,6 +38,14 @@ function ScoreboardInner() {
   const [setHistory, setSetHistory] = useState<SetResult[]>([]);
   const [undoStack, setUndoStack] = useState<Snapshot[]>([]);
   const [finished, setFinished] = useState(false);
+
+  // 진행 중인 경기 확인
+  useEffect(() => {
+    fetch("/api/matches/active")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setActiveMatch(d))
+      .catch(() => setActiveMatch(null));
+  }, []);
 
   // Lock screen orientation to landscape if possible
   useEffect(() => {
@@ -46,20 +61,17 @@ function ScoreboardInner() {
     };
   }, []);
 
-  // Load player names
+  // Load player names from active match
   useEffect(() => {
     fetch("/api/me")
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => { if (d?.name) setP1Name(d.name); })
+      .then((d) => { if (d?.nickname ?? d?.name) setP1Name(d.nickname ?? d.name); })
       .catch(() => {});
+  }, []);
 
-    if (opponentId) {
-      fetch(`/api/players/${opponentId}`)
-        .then((r) => r.ok ? r.json() : null)
-        .then((d) => { if (d?.name) setP2Name(d.name); })
-        .catch(() => {});
-    }
-  }, [opponentId]);
+  useEffect(() => {
+    if (activeMatch?.opponent?.name) setP2Name(activeMatch.opponent.name);
+  }, [activeMatch]);
 
   function makeSnapshot(): Snapshot {
     return { p1Points, p2Points, p1Sets, p2Sets, setHistory: [...setHistory] };
@@ -125,9 +137,34 @@ function ScoreboardInner() {
     setEditingName(null);
   }
 
+  // 로딩 중
+  if (activeMatch === undefined) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center" style={{ background: "#0f172a" }}>
+        <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+      </div>
+    );
+  }
+
+  // 진행 중인 경기 없음
+  if (!activeMatch) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: "#0f172a" }}>
+        <div className="text-5xl">🏓</div>
+        <p className="font-bold text-[18px] text-white">진행 중인 경기가 없습니다</p>
+        <p className="text-[13px] text-white/50">
+          경기 신청이 수락되고 예약 시간이 시작되면 스코어보드가 활성화됩니다.
+        </p>
+        <a href="/mypage" className="mt-2 px-6 py-2.5 rounded-full text-[13px] font-bold" style={{ background: "var(--jade-600)", color: "#fff" }}>
+          마이페이지로
+        </a>
+      </div>
+    );
+  }
+
   const winner = finished ? (p1Sets >= setsToWin ? "p1" : "p2") : null;
-  const recordUrl = opponentId
-    ? `/ranking/record?opponent=${opponentId}`
+  const recordUrl = activeMatch.opponent?.id
+    ? `/ranking/record?opponent=${activeMatch.opponent.id}`
     : "/ranking/record";
 
   return (
@@ -141,7 +178,7 @@ function ScoreboardInner() {
         style={{ background: "#1e293b", borderBottom: "1px solid #334155" }}
       >
         <Link
-          href={opponentId ? `/players/${opponentId}` : "/ranking"}
+          href={activeMatch.opponent?.id ? `/players/${activeMatch.opponent.id}` : "/ranking"}
           className="text-[12px] px-2 py-1 rounded"
           style={{ background: "#334155", color: "#94a3b8" }}
         >

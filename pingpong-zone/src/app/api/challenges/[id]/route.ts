@@ -51,12 +51,5 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data: { status: action === "accept" ? "accepted" : "rejected" },
   });
 
-  if (action === "accept") {
-    return NextResponse.json({
-      challenge: updated,
-      redirectUrl: `/scoreboard?opponent=${challenge.challengerId}`,
-    });
-  }
-
   return NextResponse.json({ challenge: updated });
 }

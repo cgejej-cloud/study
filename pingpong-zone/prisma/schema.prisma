@@ -82,8 +82,9 @@ model Reservation {
   createdAt      DateTime      @default(now())
   user           User          @relation(fields: [userId], references: [id])
   table          Table         @relation(fields: [tableId], references: [id])
-  parent         Reservation?  @relation("RecurringGroup", fields: [parentId], references: [id])
-  children       Reservation[] @relation("RecurringGroup")
+  parent         Reservation?     @relation("RecurringGroup", fields: [parentId], references: [id])
+  children       Reservation[]    @relation("RecurringGroup")
+  challenges     MatchChallenge[]
 
   @@index([userId, date])
   @@index([tableId, date, status])
@@ -242,15 +243,17 @@ model Follow {
 
 // ── 매치 챌린지 ─────────────────────────────────
 model MatchChallenge {
-  id           String   @id @default(cuid())
-  challengerId String
-  challengedId String
-  message      String?
-  status       String   @default("pending")
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  challenger   User     @relation("ChallengesSent", fields: [challengerId], references: [id])
-  challenged   User     @relation("ChallengesReceived", fields: [challengedId], references: [id])
+  id             String       @id @default(cuid())
+  challengerId   String
+  challengedId   String
+  message        String?
+  status         String       @default("pending")
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  reservationId  String?
+  challenger     User         @relation("ChallengesSent", fields: [challengerId], references: [id])
+  challenged     User         @relation("ChallengesReceived", fields: [challengedId], references: [id])
+  reservation    Reservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
 
   @@index([challengedId, status])
   @@index([challengerId])

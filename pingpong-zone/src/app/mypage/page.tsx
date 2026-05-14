@@ -73,6 +73,7 @@ export default function MyPage() {
   const [pendingMatches, setPendingMatches] = useState<PendingMatch[]>([]);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [followCounts, setFollowCounts] = useState<FollowCounts | null>(null);
+  const [activeMatch, setActiveMatch] = useState<{ opponent: { id: string; name: string }; reservation: { date: string; startTime: string; endTime: string; table: { name: string } } | null } | null>(null);
   const [teamMatches, setTeamMatches] = useState<TeamMatchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -81,22 +82,24 @@ export default function MyPage() {
     let cancelled = false;
 
     async function load() {
-      const [meRes, resRes, pendRes, chalRes, tmRes] = await Promise.all([
+      const [meRes, resRes, pendRes, chalRes, tmRes, activeRes] = await Promise.all([
         fetch("/api/me"),
         fetch("/api/reservations"),
         fetch("/api/matches?pending=true"),
         fetch("/api/challenges"),
         fetch("/api/team-matches"),
+        fetch("/api/matches/active"),
       ]);
 
       if (resRes.status === 401) { router.push("/login"); return; }
 
-      const [me, resData, pendData, chalData, tmData] = await Promise.all([
+      const [me, resData, pendData, chalData, tmData, activeData] = await Promise.all([
         meRes.json(),
         resRes.json(),
         pendRes.json(),
         chalRes.ok ? chalRes.json() : [],
         tmRes.ok ? tmRes.json() : [],
+        activeRes.ok ? activeRes.json() : null,
       ]);
 
       if (cancelled) return;
@@ -110,6 +113,7 @@ export default function MyPage() {
       setReservations(Array.isArray(resData) ? resData : []);
       setPendingMatches(Array.isArray(pendData) ? pendData : []);
       setChallenges(Array.isArray(chalData) ? chalData : []);
+      if (activeData) setActiveMatch(activeData);
       setTeamMatches(Array.isArray(tmData) ? tmData.slice(0, 3) : []);
       setLoading(false);
     }
@@ -208,6 +212,27 @@ export default function MyPage() {
           </Link>
         </div>
       </div>
+
+      {/* ── 진행 중인 경기 배너 ── */}
+      {activeMatch && (
+        <Link
+          href="/scoreboard"
+          className="flex items-center gap-4 rounded-2xl px-5 py-4 animate-pulse-slow"
+          style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)", border: "2px solid #38bdf8", display: "flex" }}
+        >
+          <div className="text-3xl">🏓</div>
+          <div className="flex-1 min-w-0">
+            <p className="font-extrabold text-[15px] text-white">경기 진행 중!</p>
+            <p className="text-[12px] mt-0.5" style={{ color: "#7dd3fc" }}>
+              vs {activeMatch.opponent.name}
+              {activeMatch.reservation && ` · ${activeMatch.reservation.table.name} · ${activeMatch.reservation.startTime}~${activeMatch.reservation.endTime}`}
+            </p>
+          </div>
+          <span className="font-bold text-[13px] px-3 py-1.5 rounded-full" style={{ background: "#38bdf8", color: "#0f172a" }}>
+            스코어보드 →
+          </span>
+        </Link>
+      )}
 
       {/* 팔로우 현황 */}
       {followCounts && (
