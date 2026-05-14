@@ -422,13 +422,16 @@ export default function ReservePage() {
 
             {viewTab === "slots" && selectedDate && (
               <>
+                {(() => {
+                  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+                  const kstToday = kst.toISOString().split("T")[0];
+                  const kstHour = kst.getUTCHours();
+                  return (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                   {TIME_SLOTS.map((time) => {
                     const status = getSlotStatus(time);
                     const wMsg = waitlistMsg[time];
-                    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-                    const kstToday = kst.toISOString().split("T")[0];
-                    const isPast = selectedDate < kstToday || (selectedDate === kstToday && Number(time.split(":")[0]) <= kst.getUTCHours());
+                    const isPast = selectedDate < kstToday || (selectedDate === kstToday && Number(time.split(":")[0]) <= kstHour);
                     return (
                       <div key={time} className="flex flex-col gap-1">
                         <button
@@ -467,6 +470,8 @@ export default function ReservePage() {
                     );
                   })}
                 </div>
+                  );
+                })()}
                 <div className="flex gap-4 mt-2 text-xs text-gray-500">
                   <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block border" /> 예약가능</span>
                   <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 inline-block" /> 예약됨</span>

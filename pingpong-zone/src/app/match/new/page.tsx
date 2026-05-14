@@ -285,12 +285,14 @@ function MatchNewInner() {
               <div>
                 <p className="text-[12px] font-semibold mb-2" style={{ color: "var(--text-2)" }}>시작 시간 선택 (1시간 단위)</p>
                 <div className="grid grid-cols-4 gap-1.5">
-                  {HOURS.slice(0, -1).map((h) => {
-                    const end = `${String(parseInt(h) + 1).padStart(2, "0")}:00`;
-                    const booked = isSlotBooked(h, end, selectedTable.bookedSlots);
+                  {(() => {
                     const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
                     const kstToday = kst.toISOString().split("T")[0];
-                    const isPast = date < kstToday || (date === kstToday && parseInt(h) <= kst.getUTCHours());
+                    const kstHour = kst.getUTCHours();
+                    return HOURS.slice(0, -1).map((h) => {
+                    const end = `${String(parseInt(h) + 1).padStart(2, "0")}:00`;
+                    const booked = isSlotBooked(h, end, selectedTable.bookedSlots);
+                    const isPast = date < kstToday || (date === kstToday && parseInt(h) <= kstHour);
                     const disabled = booked || isPast;
                     const selected = selectedStart === h;
                     return (
@@ -310,7 +312,8 @@ function MatchNewInner() {
                         {isPast && !booked && <div className="text-[10px]">지남</div>}
                       </button>
                     );
-                  })}
+                  });
+                  })()}
                 </div>
                 {selectedStart && (
                   <p className="text-[12px] mt-2" style={{ color: "var(--jade-700)" }}>
