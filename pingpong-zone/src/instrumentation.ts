@@ -32,6 +32,19 @@ export async function register() {
     await run(`ALTER TABLE "MatchChallenge" ADD COLUMN IF NOT EXISTS "reservationId" TEXT`);
     await run(`ALTER TABLE "MatchChallenge" ADD CONSTRAINT "MatchChallenge_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation"("id") ON DELETE SET NULL ON UPDATE CASCADE`);
 
+    // Migration 0006: check-in / game session
+    await run(`ALTER TABLE "Reservation" ADD COLUMN IF NOT EXISTS "checkInCode" TEXT`);
+    await run(`CREATE TABLE IF NOT EXISTS "ReservationParticipant" ("id" TEXT NOT NULL, "reservationId" TEXT NOT NULL, "userId" TEXT NOT NULL, "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "ReservationParticipant_pkey" PRIMARY KEY ("id"))`);
+    await run(`CREATE UNIQUE INDEX IF NOT EXISTS "ReservationParticipant_reservationId_userId_key" ON "ReservationParticipant"("reservationId","userId")`);
+    await run(`CREATE INDEX IF NOT EXISTS "ReservationParticipant_reservationId_idx" ON "ReservationParticipant"("reservationId")`);
+    await run(`ALTER TABLE "ReservationParticipant" ADD CONSTRAINT "ReservationParticipant_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation"("id") ON DELETE RESTRICT ON UPDATE CASCADE`);
+    await run(`ALTER TABLE "ReservationParticipant" ADD CONSTRAINT "ReservationParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`);
+    await run(`CREATE TABLE IF NOT EXISTS "GameSession" ("id" TEXT NOT NULL, "reservationId" TEXT NOT NULL, "matchType" TEXT NOT NULL, "config" JSONB NOT NULL, "status" TEXT NOT NULL DEFAULT 'active', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "GameSession_pkey" PRIMARY KEY ("id"))`);
+    await run(`CREATE UNIQUE INDEX IF NOT EXISTS "GameSession_reservationId_key" ON "GameSession"("reservationId")`);
+    await run(`ALTER TABLE "GameSession" ADD CONSTRAINT "GameSession_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation"("id") ON DELETE RESTRICT ON UPDATE CASCADE`);
+    await run(`CREATE TABLE IF NOT EXISTS "SetScore" ("id" TEXT NOT NULL, "sessionId" TEXT NOT NULL, "setNumber" INTEGER NOT NULL, "team1Score" INTEGER NOT NULL, "team2Score" INTEGER NOT NULL, "players" JSONB, "savedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "SetScore_pkey" PRIMARY KEY ("id"))`);
+    await run(`CREATE INDEX IF NOT EXISTS "SetScore_sessionId_idx" ON "SetScore"("sessionId")`);
+
     // 어드민 계정 자동 생성 (ADMIN_EMAIL / ADMIN_PASSWORD 환경변수 설정 시)
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;

@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
           throw new Error(`BLOCKED::${d} 예약 불가 시간대입니다.`);
         }
       }
+      const checkInCode = Math.floor(100000 + Math.random() * 900000).toString();
       const first = await tx.reservation.create({
         data: {
           userId: session.id,
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
           endTime,
           isRecurring: weeks > 0,
           recurrenceEnd: weeks > 0 ? dates[dates.length - 1] : null,
+          checkInCode,
         },
         include: { table: true },
       });

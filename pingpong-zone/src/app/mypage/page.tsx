@@ -13,6 +13,7 @@ type Reservation = {
   status: string;
   isRecurring?: boolean;
   parentId?: string | null;
+  checkInCode?: string | null;
   table: { name: string };
 };
 
@@ -384,26 +385,46 @@ export default function MyPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {upcoming.map((r) => (
-              <div key={r.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center justify-between shadow-sm">
-                <div>
-                  <span className="font-semibold text-green-700 text-sm">{r.table.name}</span>
-                  {(r.isRecurring || r.parentId) && (
-                    <span className="ml-1.5 text-[10px] font-semibold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full align-middle">반복</span>
+            {upcoming.map((r) => {
+              const isToday = r.date === new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+              return (
+                <div key={r.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-green-700 text-sm">{r.table.name}</span>
+                      {(r.isRecurring || r.parentId) && (
+                        <span className="ml-1.5 text-[10px] font-semibold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full align-middle">반복</span>
+                      )}
+                      <span className="text-gray-400 mx-2">·</span>
+                      <span className="text-sm text-gray-700">{formatDate(r.date)}</span>
+                      <span className="text-gray-400 mx-2">·</span>
+                      <span className="text-sm text-gray-700">{r.startTime} ~ {r.endTime}</span>
+                    </div>
+                    <button
+                      onClick={() => handleCancel(r)}
+                      className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors ml-3"
+                    >
+                      취소
+                    </button>
+                  </div>
+                  {isToday && r.checkInCode && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl" style={{ background: "#f0fdf4", border: "1px solid #86efac" }}>
+                        <span className="text-[11px] font-bold" style={{ color: "#166534" }}>체크인 코드</span>
+                        <span className="text-[18px] font-mono font-extrabold tracking-widest" style={{ color: "#166534" }}>{r.checkInCode}</span>
+                      </div>
+                      <Link
+                        href={`/reserve/session/${r.id}`}
+                        className="px-3 py-1.5 rounded-xl text-[12px] font-bold"
+                        style={{ background: "var(--jade-950)", color: "white" }}
+                      >
+                        경기 시작 →
+                      </Link>
+                    </div>
                   )}
-                  <span className="text-gray-400 mx-2">·</span>
-                  <span className="text-sm text-gray-700">{formatDate(r.date)}</span>
-                  <span className="text-gray-400 mx-2">·</span>
-                  <span className="text-sm text-gray-700">{r.startTime} ~ {r.endTime}</span>
                 </div>
-                <button
-                  onClick={() => handleCancel(r)}
-                  className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors"
-                >
-                  취소
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

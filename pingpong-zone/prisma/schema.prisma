@@ -25,6 +25,7 @@ model User {
   title               String?
   createdAt           DateTime              @default(now())
   reservations        Reservation[]
+  reservationParticipations ReservationParticipant[]
   matchesAsPlayer1    Match[]               @relation("Player1Matches")
   matchesAsPlayer2    Match[]               @relation("Player2Matches")
   matchesWon          Match[]               @relation("WonMatches")
@@ -82,12 +83,15 @@ model Reservation {
   recurrenceEnd  String?
   parentId       String?
   reminderSent   Boolean       @default(false)
+  checkInCode    String?
   createdAt      DateTime      @default(now())
   user           User          @relation(fields: [userId], references: [id])
   table          Table         @relation(fields: [tableId], references: [id])
   parent         Reservation?     @relation("RecurringGroup", fields: [parentId], references: [id])
   children       Reservation[]    @relation("RecurringGroup")
   challenges     MatchChallenge[]
+  participants   ReservationParticipant[]
+  gameSession    GameSession?
 
   @@index([userId, date])
   @@index([tableId, date, status])
@@ -329,6 +333,45 @@ model TeamMatch {
 
   @@index([status, createdAt])
   @@index([seasonId])
+}
+
+// ── 체크인 참가자 ────────────────────────────────
+model ReservationParticipant {
+  id            String      @id @default(cuid())
+  reservationId String
+  userId        String
+  joinedAt      DateTime    @default(now())
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+
+  @@unique([reservationId, userId])
+  @@index([reservationId])
+}
+
+// ── 경기 세션 (체크인 기반) ──────────────────────
+model GameSession {
+  id            String      @id @default(cuid())
+  reservationId String      @unique
+  matchType     String      // singles | doubles | king
+  config        Json        // team/player composition
+  status        String      @default("active") // active | completed
+  createdAt     DateTime    @default(now())
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  sets          SetScore[]
+}
+
+// ── 세트 스코어 ──────────────────────────────────
+model SetScore {
+  id          String      @id @default(cuid())
+  sessionId   String
+  setNumber   Int
+  team1Score  Int
+  team2Score  Int
+  players     Json?       // king mode: { p1Id, p2Id, winnerId }
+  savedAt     DateTime    @default(now())
+  session     GameSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
 }
 
 // ── 주간 랭킹 스냅샷 ────────────────────────────

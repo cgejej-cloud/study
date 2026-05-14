@@ -90,6 +90,7 @@ export default function Header() {
         <nav className="flex items-center gap-0.5 min-w-0">
           <ThemeToggle />
           <NavLink href="/reserve" label="예약" pathname={pathname} />
+          <NavLink href="/reserve/checkin" label="체크인" pathname={pathname} />
           <NavLink href="/ranking" label="랭킹" pathname={pathname} />
           <NavLink href="/events" label="이벤트" pathname={pathname} />
 
