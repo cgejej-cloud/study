@@ -7,37 +7,33 @@ import Avatar from "@/components/Avatar";
 import { useToast } from "@/components/Toast";
 import { PROFILE_COLORS } from "@/lib/validation";
 
+const ANIMAL_EMOJIS = [
+  "🐱","🐶","🐼","🐨","🦊","🐻","🐯","🦁",
+  "🐸","🐧","🦆","🐰","🐹","🐺","🦝","🦋",
+  "🐳","🦈","🐬","🦜","🦩","🦚","🦉","🐦",
+  "🐙","🦑","🦀","🐡","🐠","🐟","🦭","🐻‍❄️",
+];
+
 export default function EditProfilePage() {
   const router = useRouter();
   const toast = useToast();
 
-  // 기본 정보
   const [name, setName] = useState("");
   const [nickname, setNickname] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [emailNotify, setEmailNotify] = useState(true);
-
-  // 탁구 정보
-  const [title, setTitle] = useState("");
   const [racketType, setRacketType] = useState("");
   const [playStyle, setPlayStyle] = useState("");
-
-  // 프로필 꾸미기
   const [avatar, setAvatar] = useState("");
   const [profileColor, setProfileColor] = useState("");
-  const [avatarUploading, setAvatarUploading] = useState(false);
 
-  // 비밀번호
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // UI 상태
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState<"profile" | "account" | "password" | "danger">("profile");
-
-  // 계정 삭제
   const [showDelete, setShowDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -53,7 +49,6 @@ export default function EditProfilePage() {
         setPhone(data.phone || "");
         setAvatar(data.avatar || "");
         setProfileColor(data.profileColor || "");
-        setTitle(data.title || "");
         setRacketType(data.racketType || "");
         setPlayStyle(data.playStyle || "");
         if (typeof data.emailNotify === "boolean") setEmailNotify(data.emailNotify);
@@ -76,7 +71,6 @@ export default function EditProfilePage() {
         phone,
         emailNotify,
         avatar: avatar || null,
-        title: title || null,
         racketType: racketType || null,
         playStyle: playStyle || null,
       }),
@@ -137,38 +131,8 @@ export default function EditProfilePage() {
 
       {/* 프로필 미리보기 */}
       <div className="card p-5 flex items-center gap-4" style={{ background: "linear-gradient(135deg, var(--jade-50), var(--jade-100))" }}>
-        <div className="relative shrink-0">
-          <Avatar name={displayName} size="lg" avatar={avatar || undefined} profileColor={profileColor || undefined} />
-          <label
-            className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer text-[12px]"
-            style={{ background: "var(--jade-950)", color: "#fff", border: "2px solid #fff" }}
-            title="사진 변경"
-          >
-            {avatarUploading ? "…" : "📷"}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              className="hidden"
-              disabled={avatarUploading}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setAvatarUploading(true);
-                const fd = new FormData();
-                fd.append("file", file);
-                const res = await fetch("/api/me/avatar", { method: "POST", body: fd });
-                const data = await res.json();
-                setAvatarUploading(false);
-                if (res.ok) { setAvatar(data.url); toast.show("프로필 사진이 변경되었습니다.", "success"); }
-                else toast.show(data.error || "업로드 실패", "error");
-              }}
-            />
-          </label>
-        </div>
+        <Avatar name={displayName} size="lg" avatar={avatar || undefined} profileColor={profileColor || undefined} />
         <div className="min-w-0">
-          {title && (
-            <p className="text-[11px] font-semibold mb-0.5" style={{ color: "var(--jade-600)" }}>{title}</p>
-          )}
           <p className="font-extrabold text-[18px]" style={{ color: "var(--text-1)", letterSpacing: "-0.02em" }}>
             {displayName}
           </p>
@@ -200,25 +164,8 @@ export default function EditProfilePage() {
       {/* ── 프로필 섹션 ── */}
       {activeSection === "profile" && (
         <form onSubmit={handleSaveProfile} className="space-y-5">
-          {/* 닉네임 */}
+          {/* 기본 정보 */}
           <div className="card p-5 space-y-4">
-            <div>
-              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>
-                칭호{" "}
-                <span className="text-[11px] font-normal" style={{ color: title.length > 12 ? "#e11d48" : "var(--text-3)" }}>
-                  {title.length}/16 · 닉네임 앞에 표시
-                </span>
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={16}
-                placeholder="ex) 탁구왕, 서브의신, 수비수 …"
-                className="w-full rounded-xl px-3 py-2.5 text-[14px] focus:outline-none"
-                style={{ background: "var(--jade-50)", border: "1.5px solid var(--border)" }}
-              />
-            </div>
             <div>
               <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>
                 닉네임 <span className="text-[11px] font-normal" style={{ color: "var(--text-3)" }}>(공개 표시 이름, 선택)</span>
@@ -270,12 +217,82 @@ export default function EditProfilePage() {
             </div>
           </div>
 
+          {/* 동물 아바타 */}
+          <div className="card p-5">
+            <label className="block text-[13px] font-semibold mb-3" style={{ color: "var(--text-1)" }}>
+              아바타 동물 선택
+            </label>
+            <div className="grid grid-cols-8 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setAvatar("")}
+                className="aspect-square rounded-full flex items-center justify-center text-[11px] font-bold transition-all"
+                style={{
+                  background: avatar === "" ? "var(--jade-950)" : "var(--jade-50)",
+                  color: avatar === "" ? "#fff" : "var(--text-3)",
+                  border: avatar === "" ? "2px solid var(--jade-950)" : "2px solid var(--border)",
+                }}
+              >
+                없음
+              </button>
+              {ANIMAL_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setAvatar(emoji)}
+                  className="aspect-square rounded-full flex items-center justify-center text-[22px] transition-all"
+                  style={{
+                    background: avatar === emoji ? "var(--jade-100)" : "var(--jade-50)",
+                    border: avatar === emoji ? "2px solid var(--jade-700)" : "2px solid transparent",
+                    outline: avatar === emoji ? "2px solid var(--jade-300)" : "none",
+                    outlineOffset: "1px",
+                  }}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 배경 색상 */}
+          <div className="card p-5">
+            <label className="block text-[13px] font-semibold mb-3" style={{ color: "var(--text-1)" }}>
+              아바타 배경 색상
+            </label>
+            <div className="grid grid-cols-8 gap-2">
+              <button
+                type="button"
+                onClick={() => setProfileColor("")}
+                className="aspect-square rounded-full transition-all flex items-center justify-center"
+                style={{
+                  background: "linear-gradient(135deg, #e2e8f0, #cbd5e1)",
+                  border: profileColor === "" ? "3px solid var(--jade-700)" : "3px solid transparent",
+                  outline: profileColor === "" ? "2px solid var(--jade-300)" : "none",
+                }}
+              >
+                <span className="text-[10px] font-bold" style={{ color: "#64748b" }}>자동</span>
+              </button>
+              {PROFILE_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setProfileColor(c)}
+                  className="aspect-square rounded-full transition-all"
+                  style={{
+                    background: c,
+                    border: profileColor === c ? "3px solid #1e293b" : "3px solid transparent",
+                    outline: profileColor === c ? `2px solid ${c}` : "none",
+                    outlineOffset: "2px",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
           {/* 탁구 정보 */}
           <div className="card p-5 space-y-4">
             <div>
-              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>
-                라켓 타입
-              </label>
+              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>라켓 타입</label>
               <select
                 value={racketType}
                 onChange={(e) => setRacketType(e.target.value)}
@@ -289,9 +306,7 @@ export default function EditProfilePage() {
               </select>
             </div>
             <div>
-              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>
-                플레이 전형
-              </label>
+              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>플레이 전형</label>
               <select
                 value={playStyle}
                 onChange={(e) => setPlayStyle(e.target.value)}
@@ -308,50 +323,6 @@ export default function EditProfilePage() {
                 <option value="serve">서브·리시브형</option>
               </select>
             </div>
-          </div>
-
-          {/* 아바타 색상 */}
-          <div className="card p-5">
-            <label className="block text-[13px] font-semibold mb-3" style={{ color: "var(--text-1)" }}>
-              아바타 배경 색상
-            </label>
-            <div className="grid grid-cols-8 gap-2">
-              {/* 기본값 */}
-              <button
-                type="button"
-                onClick={() => setProfileColor("")}
-                className="aspect-square rounded-full transition-all relative flex items-center justify-center"
-                style={{
-                  background: "linear-gradient(135deg, #e2e8f0, #cbd5e1)",
-                  border: profileColor === "" ? "3px solid var(--jade-700)" : "3px solid transparent",
-                  outline: profileColor === "" ? "2px solid var(--jade-300)" : "none",
-                }}
-                title="기본 (이름 기반 자동)"
-              >
-                <span className="text-[10px] font-bold" style={{ color: "#64748b" }}>자동</span>
-              </button>
-              {PROFILE_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setProfileColor(c)}
-                  className="aspect-square rounded-full transition-all"
-                  style={{
-                    background: c,
-                    border: profileColor === c ? "3px solid #1e293b" : "3px solid transparent",
-                    outline: profileColor === c ? `2px solid ${c}` : "none",
-                    outlineOffset: "2px",
-                  }}
-                  title={c}
-                />
-              ))}
-            </div>
-            {profileColor && (
-              <div className="mt-3 flex items-center gap-2">
-                <Avatar name={displayName} size="md" profileColor={profileColor} />
-                <span className="text-[12px]" style={{ color: "var(--text-3)" }}>미리보기</span>
-              </div>
-            )}
           </div>
 
           <button
@@ -449,7 +420,6 @@ export default function EditProfilePage() {
         </div>
       )}
 
-      {/* 탈퇴 확인 모달 */}
       {showDelete && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-4" style={{ background: "rgba(0,0,0,0.5)" }} role="dialog">
           <div className="card p-6 max-w-sm w-full space-y-4">
@@ -466,12 +436,7 @@ export default function EditProfilePage() {
               style={{ background: "var(--jade-50)", border: "1.5px solid var(--border)" }}
             />
             <div className="flex gap-2">
-              <button
-                onClick={() => { setShowDelete(false); setDeletePassword(""); }}
-                className="btn flex-1 py-2.5 font-semibold"
-              >
-                취소
-              </button>
+              <button onClick={() => { setShowDelete(false); setDeletePassword(""); }} className="btn flex-1 py-2.5 font-semibold">취소</button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}

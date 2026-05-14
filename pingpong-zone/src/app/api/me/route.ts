@@ -59,7 +59,8 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (avatar !== undefined && avatar !== null && avatar !== "") {
-    if (!avatar.startsWith("https://") || avatar.length > 500) {
+    const isEmoji = avatar.length <= 4 && !avatar.startsWith("http");
+    if (!isEmoji && (!avatar.startsWith("https://") || avatar.length > 500)) {
       return NextResponse.json({ error: "아바타 URL은 https로 시작하는 500자 이하여야 합니다." }, { status: 400 });
     }
   }

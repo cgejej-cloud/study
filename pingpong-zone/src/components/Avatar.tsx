@@ -3,18 +3,18 @@
 import { useState } from "react";
 
 const COLORS = [
-  "bg-red-100 text-red-700",
-  "bg-orange-100 text-orange-700",
-  "bg-amber-100 text-amber-700",
-  "bg-lime-100 text-lime-700",
-  "bg-green-100 text-green-700",
-  "bg-teal-100 text-teal-700",
-  "bg-cyan-100 text-cyan-700",
-  "bg-blue-100 text-blue-700",
-  "bg-indigo-100 text-indigo-700",
-  "bg-purple-100 text-purple-700",
-  "bg-pink-100 text-pink-700",
-  "bg-rose-100 text-rose-700",
+  "bg-red-100",
+  "bg-orange-100",
+  "bg-amber-100",
+  "bg-lime-100",
+  "bg-green-100",
+  "bg-teal-100",
+  "bg-cyan-100",
+  "bg-blue-100",
+  "bg-indigo-100",
+  "bg-purple-100",
+  "bg-pink-100",
+  "bg-rose-100",
 ];
 
 function hash(s: string) {
@@ -31,6 +31,10 @@ function textColorForBg(hex: string): string {
   return luminance > 0.5 ? "rgba(0,0,0,0.75)" : "#fff";
 }
 
+function isEmoji(s: string) {
+  return s.length <= 4 && !s.startsWith("http");
+}
+
 export default function Avatar({
   name,
   size = "md",
@@ -45,15 +49,15 @@ export default function Avatar({
   profileColor?: string | null;
 }) {
   const [imgError, setImgError] = useState(false);
-  const initials = (name || "?").trim().slice(0, 2).toUpperCase();
   const sizeCls = {
-    xs: "w-6 h-6 text-[10px]",
-    sm: "w-8 h-8 text-xs",
-    md: "w-10 h-10 text-sm",
-    lg: "w-16 h-16 text-xl",
+    xs: "w-6 h-6 text-[14px]",
+    sm: "w-8 h-8 text-[18px]",
+    md: "w-10 h-10 text-[22px]",
+    lg: "w-16 h-16 text-[36px]",
   }[size];
 
-  if (avatar && !imgError) {
+  // 이미지 URL 아바타
+  if (avatar && !imgError && !isEmoji(avatar)) {
     return (
       <img
         src={avatar}
@@ -64,25 +68,37 @@ export default function Avatar({
     );
   }
 
-  if (profileColor) {
+  // 이모지 아바타
+  if (avatar && isEmoji(avatar)) {
+    const bg = profileColor || null;
     return (
       <div
-        className={`${sizeCls} rounded-full flex items-center justify-center font-bold shrink-0 ${className}`}
-        style={{ background: profileColor, color: textColorForBg(profileColor) }}
+        className={`${sizeCls} rounded-full flex items-center justify-center shrink-0 ${className} ${!bg ? COLORS[hash(name) % COLORS.length] : ""}`}
+        style={bg ? { background: bg } : {}}
         aria-hidden="true"
       >
-        {initials}
+        {avatar}
       </div>
     );
   }
 
+  // 단색 배경 (텍스트 없음)
+  if (profileColor) {
+    return (
+      <div
+        className={`${sizeCls} rounded-full shrink-0 ${className}`}
+        style={{ background: profileColor }}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  // 기본: 이름 기반 색상 (텍스트 없음)
   const color = COLORS[hash(name) % COLORS.length];
   return (
     <div
-      className={`${sizeCls} ${color} rounded-full flex items-center justify-center font-bold shrink-0 ${className}`}
+      className={`${sizeCls} ${color} rounded-full shrink-0 ${className}`}
       aria-hidden="true"
-    >
-      {initials}
-    </div>
+    />
   );
 }
