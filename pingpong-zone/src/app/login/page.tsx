@@ -47,7 +47,7 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
             <label className="block text-[12px] font-bold mb-1.5" style={{ color: "var(--text-2)" }}>이메일</label>
-            <input name="email" type="email" required autoComplete="email" placeholder="email@example.com"
+            <input name="email" type="email" required autoComplete="username email" placeholder="email@example.com"
               className={inputCls} style={inputStyle} />
           </div>
 

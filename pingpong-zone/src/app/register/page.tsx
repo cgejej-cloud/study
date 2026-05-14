@@ -76,7 +76,7 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-3.5">
           {[
             { name: "name",     label: "이름",    type: "text",     required: true,  placeholder: "홍길동",            autoComplete: "name",         hint: "" },
-            { name: "email",    label: "이메일",  type: "email",    required: true,  placeholder: "email@example.com", autoComplete: "email",        hint: "" },
+            { name: "email",    label: "이메일",  type: "email",    required: true,  placeholder: "email@example.com", autoComplete: "username email", hint: "" },
             { name: "password", label: "비밀번호", type: "password", required: true,  placeholder: "••••••••",          autoComplete: "new-password", hint: "8자 이상 입력해주세요" },
             { name: "phone",    label: "전화번호", type: "tel",      required: false, placeholder: "010-0000-0000",     autoComplete: "tel",          hint: "선택 사항입니다" },
           ].map((field) => {
