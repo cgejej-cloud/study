@@ -21,10 +21,10 @@ type Slot = { startTime: string; endTime: string; type: "reserved" | "blocked" }
 
 type TableAvailability = Table & { bookedSlots: Slot[] };
 
-const HOURS = Array.from({ length: 14 }, (_, i) => {
-  const h = 9 + i;
+const HOURS = Array.from({ length: 13 }, (_, i) => {
+  const h = 10 + i;
   return `${String(h).padStart(2, "0")}:00`;
-}); // 09:00 ~ 22:00
+}); // 10:00 ~ 22:00
 
 function isSlotBooked(start: string, end: string, bookedSlots: Slot[]) {
   return bookedSlots.some(

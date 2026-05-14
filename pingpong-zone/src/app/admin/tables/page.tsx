@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useToast } from "@/components/Toast";
 
 const TIME_SLOTS = [
-  "09:00", "10:00", "11:00", "12:00", "13:00", "14:00",
+  "10:00", "11:00", "12:00", "13:00", "14:00",
   "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00",
 ];
 
@@ -37,6 +37,9 @@ export default function AdminTablesPage() {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [adding, setAdding] = useState(false);
   const [blockTableId, setBlockTableId] = useState("");
   const [blockDate, setBlockDate] = useState(new Date().toISOString().split("T")[0]);
   const [blockStart, setBlockStart] = useState("");
@@ -133,6 +136,28 @@ export default function AdminTablesPage() {
     }
   }
 
+  async function addTable(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setAdding(true);
+    const res = await fetch("/api/admin/tables", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName.trim(), description: newDesc.trim() || undefined }),
+    });
+    setAdding(false);
+    if (res.ok) {
+      const created = await res.json();
+      setTables((prev) => [...prev, created]);
+      setNewName("");
+      setNewDesc("");
+      toast.show(`${created.name} 탁구대를 추가했습니다.`, "success");
+    } else {
+      const data = await res.json().catch(() => ({}));
+      toast.show(data.error || "추가에 실패했습니다.", "error");
+    }
+  }
+
   const today = new Date().toISOString().split("T")[0];
 
   return (
@@ -196,6 +221,32 @@ export default function AdminTablesPage() {
           ))}
         </div>
       )}
+
+      <div className="bg-white rounded-xl shadow p-6 mb-6">
+        <h2 className="text-xl font-bold mb-4">새 탁구대 추가</h2>
+        <form onSubmit={addTable} className="flex gap-3 flex-wrap">
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="탁구대 이름 (예: 연습용 탁구대)"
+            required
+            className="flex-1 min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          <input
+            value={newDesc}
+            onChange={(e) => setNewDesc(e.target.value)}
+            placeholder="설명 (선택)"
+            className="flex-1 min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          <button
+            type="submit"
+            disabled={adding}
+            className="bg-green-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 disabled:opacity-50"
+          >
+            {adding ? "추가 중..." : "추가"}
+          </button>
+        </form>
+      </div>
 
       <div className="bg-white rounded-xl shadow p-6 mb-6">
         <h2 className="text-xl font-bold mb-4">이용 불가 시간대 설정</h2>
