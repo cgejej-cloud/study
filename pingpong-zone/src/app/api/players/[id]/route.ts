@@ -18,6 +18,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
         bio: true,
         profileColor: true,
         avatar: true,
+        racketType: true,
+        playStyle: true,
         eloRating: true,
         createdAt: true,
         matchesAsPlayer1: {
@@ -125,6 +127,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       bio: user.bio ?? null,
       profileColor: user.profileColor ?? null,
       avatar: user.avatar ?? null,
+      racketType: user.racketType ?? null,
+      playStyle: user.playStyle ?? null,
       eloRating: user.eloRating,
       joinedAt: user.createdAt,
       stats: {

@@ -6,6 +6,22 @@ import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import { useToast } from "@/components/Toast";
 
+const RACKET_LABEL: Record<string, string> = {
+  shake: "셰이크핸드",
+  pen_cn: "중국식 펜홀더",
+  pen_jp: "일본식 펜홀더",
+};
+
+const PLAY_STYLE_LABEL: Record<string, string> = {
+  all_round: "올라운더",
+  drive: "드라이브형",
+  loop: "루프형",
+  smash: "스매시형",
+  speed: "속공형",
+  cut: "커트형",
+  serve: "서브·리시브형",
+};
+
 type Player = {
   id: string;
   name: string;
@@ -13,6 +29,8 @@ type Player = {
   bio: string | null;
   profileColor: string | null;
   avatar: string | null;
+  racketType: string | null;
+  playStyle: string | null;
   eloRating: number;
   joinedAt: string;
   stats: {
@@ -247,6 +265,20 @@ if (error) {
           </div>
           {player.bio && (
             <p className="text-[12px] mt-0.5 italic" style={{ color: "var(--text-2)" }}>{player.bio}</p>
+          )}
+          {(player.racketType || player.playStyle) && (
+            <div className="flex gap-1.5 mt-1 flex-wrap">
+              {player.racketType && (
+                <span className="chip text-[11px]" style={{ background: "#f0fdf4", color: "#15803d" }}>
+                  🏓 {RACKET_LABEL[player.racketType] ?? player.racketType}
+                </span>
+              )}
+              {player.playStyle && (
+                <span className="chip text-[11px]" style={{ background: "#eff6ff", color: "#1d4ed8" }}>
+                  ⚡ {PLAY_STYLE_LABEL[player.playStyle] ?? player.playStyle}
+                </span>
+              )}
+            </div>
           )}
           <p className="text-[13px] mt-0.5" style={{ color: "var(--text-2)" }}>
             현재 포인트 <span className="font-bold" style={{ color: "var(--jade-700)" }}>{player.eloRating}점</span>

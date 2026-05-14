@@ -18,6 +18,10 @@ export default function EditProfilePage() {
   const [phone, setPhone] = useState("");
   const [emailNotify, setEmailNotify] = useState(true);
 
+  // 탁구 정보
+  const [racketType, setRacketType] = useState("");
+  const [playStyle, setPlayStyle] = useState("");
+
   // 프로필 꾸미기
   const [avatar, setAvatar] = useState("");
   const [profileColor, setProfileColor] = useState("");
@@ -48,6 +52,8 @@ export default function EditProfilePage() {
         setPhone(data.phone || "");
         setAvatar(data.avatar || "");
         setProfileColor(data.profileColor || "");
+        setRacketType(data.racketType || "");
+        setPlayStyle(data.playStyle || "");
         if (typeof data.emailNotify === "boolean") setEmailNotify(data.emailNotify);
       });
   }, [router]);
@@ -68,6 +74,8 @@ export default function EditProfilePage() {
         phone,
         emailNotify,
         avatar: avatar || null,
+        racketType: racketType || null,
+        playStyle: playStyle || null,
       }),
     });
     setSaving(false);
@@ -236,6 +244,46 @@ export default function EditProfilePage() {
                 className="w-full rounded-xl px-3 py-2.5 text-[14px] focus:outline-none resize-none"
                 style={{ background: "var(--jade-50)", border: "1.5px solid var(--border)" }}
               />
+            </div>
+          </div>
+
+          {/* 탁구 정보 */}
+          <div className="card p-5 space-y-4">
+            <div>
+              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>
+                라켓 타입
+              </label>
+              <select
+                value={racketType}
+                onChange={(e) => setRacketType(e.target.value)}
+                className="w-full rounded-xl px-3 py-2.5 text-[14px] focus:outline-none"
+                style={{ background: "var(--jade-50)", border: "1.5px solid var(--border)" }}
+              >
+                <option value="">선택 안 함</option>
+                <option value="shake">셰이크핸드</option>
+                <option value="pen_cn">중국식 펜홀더</option>
+                <option value="pen_jp">일본식 펜홀더</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[13px] font-semibold mb-1.5" style={{ color: "var(--text-1)" }}>
+                플레이 전형
+              </label>
+              <select
+                value={playStyle}
+                onChange={(e) => setPlayStyle(e.target.value)}
+                className="w-full rounded-xl px-3 py-2.5 text-[14px] focus:outline-none"
+                style={{ background: "var(--jade-50)", border: "1.5px solid var(--border)" }}
+              >
+                <option value="">선택 안 함</option>
+                <option value="all_round">올라운더</option>
+                <option value="drive">드라이브형</option>
+                <option value="loop">루프형</option>
+                <option value="smash">스매시형</option>
+                <option value="speed">속공형</option>
+                <option value="cut">커트형 (수비)</option>
+                <option value="serve">서브·리시브형</option>
+              </select>
             </div>
           </div>
 

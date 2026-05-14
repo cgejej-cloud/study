@@ -20,6 +20,8 @@ model User {
   nickname            String?
   bio                 String?
   profileColor        String?
+  racketType          String?
+  playStyle           String?
   createdAt           DateTime              @default(now())
   reservations        Reservation[]
   matchesAsPlayer1    Match[]               @relation("Player1Matches")
