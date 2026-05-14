@@ -3,10 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { SessionPayload } from "@/lib/session";
 import NotificationBell from "@/components/NotificationBell";
 import GlobalSearch from "@/components/GlobalSearch";
 import ThemeToggle from "@/components/ThemeToggle";
+import Avatar from "@/components/Avatar";
+
+type HeaderUser = {
+  id: string;
+  name: string;
+  role: string;
+  nickname?: string | null;
+  avatar?: string | null;
+  profileColor?: string | null;
+};
 
 function NavLink({ href, label, pathname }: { href: string; label: string; pathname: string }) {
   const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -25,13 +34,13 @@ function NavLink({ href, label, pathname }: { href: string; label: string; pathn
 
 export default function Header() {
   const pathname = usePathname() ?? "";
-  const [session, setSession] = useState<SessionPayload | null | undefined>(undefined);
+  const [session, setSession] = useState<HeaderUser | null | undefined>(undefined);
   const [pendingCount, setPendingCount] = useState(0);
   const [disputeCount, setDisputeCount] = useState(0);
 
   useEffect(() => {
     fetch("/api/me")
-      .then((r) => r.json())
+      .then((r) => r.ok ? r.json() : null)
       .then((d) => setSession(d?.id ? d : null))
       .catch(() => setSession(null));
   }, []);
@@ -84,29 +93,11 @@ export default function Header() {
           <NavLink href="/events" label="이벤트" pathname={pathname} />
 
           {session === undefined ? (
-            <span className="w-5 h-5 rounded-full bg-white/10 animate-pulse ml-2" />
+            <span className="w-7 h-7 rounded-full bg-white/10 animate-pulse ml-2" />
           ) : session ? (
             <>
               <GlobalSearch />
               <NotificationBell />
-
-              {/* 마이페이지 */}
-              <Link
-                href="/mypage"
-                aria-current={pathname.startsWith("/mypage") ? "page" : undefined}
-                className={`relative text-[13px] font-semibold px-3 py-1.5 rounded-full transition-all ${
-                  pathname.startsWith("/mypage")
-                    ? "bg-white/15 text-white"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                마이페이지
-                {pendingCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
-                    {pendingCount}
-                  </span>
-                )}
-              </Link>
 
               {/* 관리자 */}
               {session.role === "admin" && (
@@ -128,19 +119,35 @@ export default function Header() {
                 </Link>
               )}
 
-              {/* 유저명 */}
-              <span className="hidden lg:inline text-white/50 text-[12px] px-2">
-                {session.name}
-              </span>
+              {/* 프로필 (아바타 + 이름) → 마이페이지 */}
+              <Link
+                href="/mypage"
+                aria-current={pathname.startsWith("/mypage") ? "page" : undefined}
+                className="relative flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full transition-all hover:bg-white/10"
+              >
+                <Avatar
+                  name={session.nickname ?? session.name}
+                  size="sm"
+                  avatar={session.avatar ?? undefined}
+                  profileColor={session.profileColor ?? undefined}
+                />
+                <span className="text-[13px] font-semibold text-white/90 max-w-[80px] truncate hidden sm:inline">
+                  {session.nickname ?? session.name}
+                </span>
+                {pendingCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                    {pendingCount}
+                  </span>
+                )}
+              </Link>
 
               {/* 로그아웃 */}
               <button
                 onClick={handleLogout}
                 aria-label="로그아웃"
-                className="text-[13px] font-semibold text-white/60 hover:text-white px-2 py-1.5 rounded-full hover:bg-white/10 transition-all ml-0.5"
+                className="text-[12px] text-white/50 hover:text-white/90 px-2 py-1.5 rounded-full hover:bg-white/10 transition-all"
               >
-                <span className="hidden sm:inline">로그아웃</span>
-                <span className="sm:hidden">↪</span>
+                로그아웃
               </button>
             </>
           ) : (

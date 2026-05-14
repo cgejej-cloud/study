@@ -46,8 +46,8 @@ export default function MyStatusCard() {
 
   if (!me || !data) return null;
 
-  const tier = getTier(data.eloRating);
   const { stats } = data;
+  const tier = stats.isPlacing ? null : getTier(data.eloRating);
 
   return (
     <Link
@@ -60,12 +60,19 @@ export default function MyStatusCard() {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span className="font-bold text-[14px] truncate" style={{ color: "var(--text-1)" }}>{me.name}</span>
-          <span
-            className="chip"
-            style={{ background: "var(--jade-100)", color: tier.color, fontSize: "10px" }}
-          >
-            {tier.icon} {tier.name}
-          </span>
+          {tier && (
+            <span
+              className="chip"
+              style={{ background: "var(--jade-100)", color: tier.color, fontSize: "10px" }}
+            >
+              {tier.icon} {tier.name}
+            </span>
+          )}
+          {stats.isPlacing && (
+            <span className="chip" style={{ background: "#fff7ed", color: "#c2410c", fontSize: "10px" }}>
+              🔰 배치중
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-3 flex-wrap" style={{ fontSize: "12px", color: "var(--text-3)" }}>
