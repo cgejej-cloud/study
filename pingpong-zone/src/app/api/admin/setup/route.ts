@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-const SETUP_SECRET = process.env.SETUP_SECRET ?? "pingpong-setup-2024";
-
 export async function POST(req: NextRequest) {
+  const SETUP_SECRET = process.env.SETUP_SECRET;
+  if (!SETUP_SECRET) {
+    return NextResponse.json({ error: "disabled" }, { status: 403 });
+  }
   const { secret } = await req.json().catch(() => ({}));
   if (secret !== SETUP_SECRET) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
