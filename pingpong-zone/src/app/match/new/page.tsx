@@ -36,7 +36,7 @@ function isSlotBooked(start: string, end: string, bookedSlots: Slot[]) {
 }
 
 function today() {
-  return new Date().toISOString().split("T")[0];
+  return new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
 }
 
 function MatchNewInner() {
@@ -288,21 +288,26 @@ function MatchNewInner() {
                   {HOURS.slice(0, -1).map((h) => {
                     const end = `${String(parseInt(h) + 1).padStart(2, "0")}:00`;
                     const booked = isSlotBooked(h, end, selectedTable.bookedSlots);
+                    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+                    const kstToday = kst.toISOString().split("T")[0];
+                    const isPast = date < kstToday || (date === kstToday && parseInt(h) <= kst.getUTCHours());
+                    const disabled = booked || isPast;
                     const selected = selectedStart === h;
                     return (
                       <button
                         key={h}
                         type="button"
-                        disabled={booked}
+                        disabled={disabled}
                         onClick={() => handleStartSelect(h)}
                         className="py-2 rounded-lg text-[12px] font-semibold transition-all"
-                        style={booked
-                          ? { background: "#f1f5f9", color: "#cbd5e1", cursor: "not-allowed", textDecoration: "line-through" }
+                        style={disabled
+                          ? { background: "#f1f5f9", color: "#cbd5e1", cursor: "not-allowed", textDecoration: isPast ? "none" : "line-through" }
                           : selected
                             ? { background: "var(--jade-600)", color: "#fff" }
                             : { background: "var(--jade-50)", color: "var(--jade-800)", border: "1px solid var(--jade-200)" }}
                       >
                         {h}
+                        {isPast && !booked && <div className="text-[10px]">지남</div>}
                       </button>
                     );
                   })}

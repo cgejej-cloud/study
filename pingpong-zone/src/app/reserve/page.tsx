@@ -106,11 +106,12 @@ function WeeklyCalendar({
   tableId: string;
   onSelect: (date: string, time: string) => void;
 }) {
-  const todayObj = new Date();
-  const todayStr = todayObj.toISOString().split("T")[0];
+  // KST(UTC+9) 기준 현재 날짜/시각
+  const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const todayStr = kstNow.toISOString().split("T")[0];
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(todayObj);
-    d.setDate(todayObj.getDate() + i);
+    const d = new Date(kstNow);
+    d.setUTCDate(kstNow.getUTCDate() + i);
     return d.toISOString().split("T")[0];
   });
 
@@ -148,7 +149,7 @@ function WeeklyCalendar({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableId]);
 
-  const nowHour = todayObj.getHours();
+  const nowHour = kstNow.getUTCHours();
 
   return (
     <div className="overflow-x-auto -mx-2 px-2">
@@ -250,7 +251,7 @@ export default function ReservePage() {
   const [waitlistMsg, setWaitlistMsg] = useState<Record<string, string>>({});
   const [viewTab, setViewTab] = useState<"slots" | "weekly">("slots");
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   useEffect(() => {
     fetch("/api/tables").then((r) => r.json()).then(setTables);
@@ -425,15 +426,20 @@ export default function ReservePage() {
                   {TIME_SLOTS.map((time) => {
                     const status = getSlotStatus(time);
                     const wMsg = waitlistMsg[time];
+                    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+                    const kstToday = kst.toISOString().split("T")[0];
+                    const isPast = selectedDate < kstToday || (selectedDate === kstToday && Number(time.split(":")[0]) <= kst.getUTCHours());
                     return (
                       <div key={time} className="flex flex-col gap-1">
                         <button
                           type="button"
-                          disabled={status !== "available"}
+                          disabled={status !== "available" || isPast}
                           onClick={() => setSelectedTime(time)}
                           aria-label={`${time} ${status === "reserved" ? "예약됨" : status === "blocked" ? "예약 불가" : "예약 가능"}`}
                           className={`min-h-[44px] py-3 rounded-lg text-sm font-medium transition ${
-                            status === "reserved"
+                            isPast
+                              ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                              : status === "reserved"
                               ? "bg-red-100 text-red-400 cursor-not-allowed"
                               : status === "blocked"
                               ? "bg-gray-200 text-gray-400 cursor-not-allowed"
@@ -443,8 +449,9 @@ export default function ReservePage() {
                           }`}
                         >
                           {time}
-                          {status === "reserved" && <div className="text-xs">예약됨</div>}
-                          {status === "blocked" && <div className="text-xs">불가</div>}
+                          {isPast && <div className="text-xs">지난 시간</div>}
+                          {!isPast && status === "reserved" && <div className="text-xs">예약됨</div>}
+                          {!isPast && status === "blocked" && <div className="text-xs">불가</div>}
                         </button>
                         {status === "reserved" && (
                           <button
