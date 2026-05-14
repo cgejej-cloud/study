@@ -18,8 +18,14 @@ function LoginForm() {
     setError("");
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    // next 가 외부 URL 이 아닌지 안전하게 검증
-    const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+    // next 가 외부 URL 이 아닌지 안전하게 검증 (protocol-relative, backslash, scheme 차단)
+    const safeNext =
+      next.startsWith("/") &&
+      !next.startsWith("//") &&
+      !next.startsWith("/\\") &&
+      !/^\/[a-z]+:/i.test(next)
+        ? next
+        : "/";
     const result = await login(fd);
     setLoading(false);
     if (result?.error) {

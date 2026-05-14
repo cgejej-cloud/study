@@ -1,5 +1,10 @@
+// 워밍 인스턴스에서 마이그레이션 중복 실행 방지용 모듈 싱글톤 플래그
+let initialized = false;
+
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  if (initialized) return;
+  initialized = true;
 
   try {
     const { prisma } = await import("@/lib/prisma");
@@ -31,19 +36,20 @@ export async function register() {
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPassword = process.env.ADMIN_PASSWORD;
     if (adminEmail && adminPassword) {
-      const hashed = await bcrypt.default.hash(adminPassword, 12);
       const existing = await prisma.user.findUnique({ where: { email: adminEmail }, select: { id: true, role: true } });
       if (existing) {
         if (existing.role !== "admin") {
-          await prisma.user.update({ where: { email: adminEmail }, data: { role: "admin", password: hashed } });
+          await prisma.user.update({ where: { email: adminEmail }, data: { role: "admin" } });
         }
       } else {
+        const hashed = await bcrypt.default.hash(adminPassword, 10);
         await prisma.user.create({
           data: { name: "관리자", email: adminEmail, password: hashed, role: "admin" },
         });
       }
     }
   } catch (e) {
+    initialized = false; // 실패 시 다음 콜드스타트에서 재시도
     console.error("[instrumentation] 초기화 오류:", e);
   }
 }

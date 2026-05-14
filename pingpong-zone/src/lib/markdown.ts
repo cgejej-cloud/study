@@ -55,10 +55,22 @@ export function renderMarkdown(md: string): string {
   return paragraphed;
 }
 
+function isSafeUrl(href: string): boolean {
+  const trimmed = href.trim().toLowerCase();
+  // 허용: 절대 http(s), 프로토콜 없는 상대 경로(/, ./, #, mailto:), 그 외(javascript:, data:, vbscript: 등) 차단
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return true;
+  if (trimmed.startsWith("/") || trimmed.startsWith("#") || trimmed.startsWith("./") || trimmed.startsWith("../")) return true;
+  if (trimmed.startsWith("mailto:") || trimmed.startsWith("tel:")) return true;
+  return false;
+}
+
 function applyInline(str: string): string {
   return str
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, "<code style=\"background:rgba(0,0,0,0.08);padding:0 4px;border-radius:3px;font-size:.9em\">$1</code>")
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--jade-600);text-decoration:underline">$1</a>');
+    .replace(/\[(.+?)\]\((.+?)\)/g, (_m, label: string, href: string) => {
+      if (!isSafeUrl(href)) return label;
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:var(--jade-600);text-decoration:underline">${label}</a>`;
+    });
 }

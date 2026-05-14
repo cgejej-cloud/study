@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
   if (adminEmail && adminPassword) {
-    const hashed = await bcrypt.hash(adminPassword, 12);
+    const hashed = await bcrypt.hash(adminPassword, 10);
     const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
     if (existing) {
       await prisma.user.update({
