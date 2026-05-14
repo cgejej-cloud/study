@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 const TIME_SLOTS = [
@@ -106,14 +106,16 @@ function WeeklyCalendar({
   tableId: string;
   onSelect: (date: string, time: string) => void;
 }) {
-  // KST(UTC+9) 기준 현재 날짜/시각
-  const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
-  const todayStr = kstNow.toISOString().split("T")[0];
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(kstNow);
-    d.setUTCDate(kstNow.getUTCDate() + i);
-    return d.toISOString().split("T")[0];
-  });
+  const { todayStr, days, nowHour: weeklyNowHour } = useMemo(() => {
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const today = kst.toISOString().split("T")[0];
+    const d7 = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(kst);
+      d.setUTCDate(kst.getUTCDate() + i);
+      return d.toISOString().split("T")[0];
+    });
+    return { todayStr: today, days: d7, nowHour: kst.getUTCHours() };
+  }, []);
 
   type DayMap = { [time: string]: SlotStatus };
   const [data, setData] = useState<{ [date: string]: DayMap | "loading" }>({});
@@ -149,7 +151,7 @@ function WeeklyCalendar({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableId]);
 
-  const nowHour = kstNow.getUTCHours();
+  const nowHour = weeklyNowHour;
 
   return (
     <div className="overflow-x-auto -mx-2 px-2">
@@ -251,7 +253,10 @@ export default function ReservePage() {
   const [waitlistMsg, setWaitlistMsg] = useState<Record<string, string>>({});
   const [viewTab, setViewTab] = useState<"slots" | "weekly">("slots");
 
-  const today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const { today, kstHour } = useMemo(() => {
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    return { today: kst.toISOString().split("T")[0], kstHour: kst.getUTCHours() };
+  }, []);
 
   useEffect(() => {
     fetch("/api/tables").then((r) => r.json()).then(setTables);
@@ -422,16 +427,11 @@ export default function ReservePage() {
 
             {viewTab === "slots" && selectedDate && (
               <>
-                {(() => {
-                  const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-                  const kstToday = kst.toISOString().split("T")[0];
-                  const kstHour = kst.getUTCHours();
-                  return (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                   {TIME_SLOTS.map((time) => {
                     const status = getSlotStatus(time);
                     const wMsg = waitlistMsg[time];
-                    const isPast = selectedDate < kstToday || (selectedDate === kstToday && Number(time.split(":")[0]) <= kstHour);
+                    const isPast = selectedDate < today || (selectedDate === today && Number(time.split(":")[0]) <= kstHour);
                     return (
                       <div key={time} className="flex flex-col gap-1">
                         <button
@@ -470,8 +470,6 @@ export default function ReservePage() {
                     );
                   })}
                 </div>
-                  );
-                })()}
                 <div className="flex gap-4 mt-2 text-xs text-gray-500">
                   <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-100 inline-block border" /> 예약가능</span>
                   <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-100 inline-block" /> 예약됨</span>

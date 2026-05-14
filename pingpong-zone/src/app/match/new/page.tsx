@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
@@ -50,6 +50,11 @@ function MatchNewInner() {
   const [searchQ, setSearchQ] = useState("");
   const [searchResults, setSearchResults] = useState<Player[]>([]);
   const [searching, setSearching] = useState(false);
+  const { kstToday, kstHour } = useMemo(() => {
+    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    return { kstToday: kst.toISOString().split("T")[0], kstHour: kst.getUTCHours() };
+  }, []);
+
   const [opponent, setOpponent] = useState<Player | null>(null);
 
   // 예약
@@ -285,11 +290,7 @@ function MatchNewInner() {
               <div>
                 <p className="text-[12px] font-semibold mb-2" style={{ color: "var(--text-2)" }}>시작 시간 선택 (1시간 단위)</p>
                 <div className="grid grid-cols-4 gap-1.5">
-                  {(() => {
-                    const kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
-                    const kstToday = kst.toISOString().split("T")[0];
-                    const kstHour = kst.getUTCHours();
-                    return HOURS.slice(0, -1).map((h) => {
+                  {HOURS.slice(0, -1).map((h) => {
                     const end = `${String(parseInt(h) + 1).padStart(2, "0")}:00`;
                     const booked = isSlotBooked(h, end, selectedTable.bookedSlots);
                     const isPast = date < kstToday || (date === kstToday && parseInt(h) <= kstHour);
@@ -312,8 +313,7 @@ function MatchNewInner() {
                         {isPast && !booked && <div className="text-[10px]">지남</div>}
                       </button>
                     );
-                  });
-                  })()}
+                  })}
                 </div>
                 {selectedStart && (
                   <p className="text-[12px] mt-2" style={{ color: "var(--jade-700)" }}>
