@@ -155,8 +155,6 @@ export default function PlayerProfilePage() {
   const [myId, setMyId] = useState<string | null>(null);
   const [followStatus, setFollowStatus] = useState<FollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
-  const [challengeSent, setChallengeSent] = useState(false);
-  const [challengeLoading, setChallengeLoading] = useState(false);
 
   useEffect(() => {
     fetch(`/api/players/${id}`)
@@ -200,28 +198,8 @@ export default function PlayerProfilePage() {
     }
   }
 
-  async function handleChallenge() {
-    if (!myId || challengeLoading || challengeSent) return;
-    setChallengeLoading(true);
-    try {
-      const res = await fetch("/api/challenges", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ challengedId: id }),
-      });
-      if (res.ok) {
-        setChallengeSent(true);
-        toast.show("경기 신청을 보냈습니다!", "success");
-      } else {
-        const data = await res.json().catch(() => ({}));
-        toast.show(data.error || "신청에 실패했습니다.", "error");
-      }
-    } finally {
-      setChallengeLoading(false);
-    }
-  }
 
-  if (error) {
+if (error) {
     return (
       <div className="max-w-md mx-auto py-16 text-center space-y-3">
         <div className="text-4xl">🏓</div>
@@ -319,14 +297,13 @@ export default function PlayerProfilePage() {
               >
                 {followStatus?.following ? "팔로잉" : "팔로우"}
               </button>
-              <button
-                onClick={handleChallenge}
-                disabled={challengeLoading || challengeSent}
-                className="btn"
-                style={{ fontSize: "12px", opacity: (challengeLoading || challengeSent) ? 0.6 : 1 }}
+              <Link
+                href={`/match/new?opponent=${id}`}
+                className="btn btn-jade"
+                style={{ fontSize: "12px" }}
               >
-                {challengeSent ? "신청 완료!" : challengeLoading ? "신청 중..." : "⚔️ 경기 신청"}
-              </button>
+                ⚔️ 경기 신청 + 예약
+              </Link>
               <Link
                 href={`/scoreboard?opponent=${id}`}
                 className="btn btn-jade"

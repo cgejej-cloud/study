@@ -242,14 +242,17 @@ export default function FollowingPage() {
                     <div className="flex gap-2 shrink-0">
                       {tab === "following" && (
                         <>
-                          <button
-                            onClick={() => handleChallenge(p.id, p.name)}
-                            disabled={challenging.has(p.id) || hasPendingChallenge}
-                            className="btn btn-jade"
-                            style={{ fontSize: "11px", opacity: (challenging.has(p.id) || hasPendingChallenge) ? 0.6 : 1 }}
-                          >
-                            {hasPendingChallenge ? "신청중" : challenging.has(p.id) ? "..." : "⚔️ 경기신청"}
-                          </button>
+                          {hasPendingChallenge ? (
+                            <span className="btn" style={{ fontSize: "11px", opacity: 0.5 }}>신청중</span>
+                          ) : (
+                            <Link
+                              href={`/match/new?opponent=${p.id}`}
+                              className="btn btn-jade"
+                              style={{ fontSize: "11px" }}
+                            >
+                              ⚔️ 경기신청+예약
+                            </Link>
+                          )}
                           <button
                             onClick={() => handleUnfollow(p.id)}
                             disabled={unfollowing.has(p.id)}
