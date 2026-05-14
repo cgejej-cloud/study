@@ -22,9 +22,12 @@ function isValidOrigin(req: NextRequest): boolean {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   const vercelUrl = process.env.VERCEL_URL;
+  // VERCEL_BRANCH_URL: 브랜치별 자동 생성 URL
+  const vercelBranchUrl = process.env.VERCEL_BRANCH_URL;
   const allowedOrigins = [
     baseUrl,
     vercelUrl ? `https://${vercelUrl}` : null,
+    vercelBranchUrl ? `https://${vercelBranchUrl}` : null,
     "http://localhost:3000",
     "http://localhost:3001",
   ].filter(Boolean) as string[];
