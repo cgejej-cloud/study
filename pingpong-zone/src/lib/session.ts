@@ -1,15 +1,10 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const SECRET_RAW = process.env.SESSION_SECRET || "pingpong-zone-secret-key-minimum-32-chars-dev-only";
-if (
-  process.env.NODE_ENV === "production" &&
-  process.env.NEXT_PHASE !== "phase-production-build" &&
-  !process.env.SESSION_SECRET
-) {
-  throw new Error("[FATAL] SESSION_SECRET 환경변수가 설정되지 않았습니다.");
+function getSecret() {
+  const raw = process.env.SESSION_SECRET || "pingpong-zone-secret-key-minimum-32-chars-dev-only";
+  return new TextEncoder().encode(raw);
 }
-const SECRET = new TextEncoder().encode(SECRET_RAW);
 const COOKIE_NAME = "session";
 
 export type SessionPayload = {
@@ -23,7 +18,7 @@ export async function createSession(payload: SessionPayload) {
   const token = await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
-    .sign(SECRET);
+    .sign(getSecret());
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
@@ -41,7 +36,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   if (!token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, SECRET);
+    const { payload } = await jwtVerify(token, getSecret());
     return payload as unknown as SessionPayload;
   } catch {
     return null;
