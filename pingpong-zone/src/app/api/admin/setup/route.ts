@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 const SETUP_SECRET = process.env.SETUP_SECRET ?? "pingpong-setup-2024";
 
@@ -124,6 +125,32 @@ export async function POST(req: NextRequest) {
   await run(`ALTER TABLE "TeamMatch" ADD CONSTRAINT "TeamMatch_team2Player2Id_fkey" FOREIGN KEY ("team2Player2Id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`, "TeamMatch FK t2p2");
   await run(`ALTER TABLE "TeamMatch" ADD CONSTRAINT "TeamMatch_seasonId_fkey" FOREIGN KEY ("seasonId") REFERENCES "Season"("id") ON DELETE SET NULL ON UPDATE CASCADE`, "TeamMatch FK season");
   await run(`ALTER TABLE "RankSnapshot" ADD CONSTRAINT "RankSnapshot_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE`, "RankSnapshot FK");
+
+  // Migration 0004: reservationId on MatchChallenge
+  await run(`ALTER TABLE "MatchChallenge" ADD COLUMN IF NOT EXISTS "reservationId" TEXT`, "MatchChallenge.reservationId column");
+  await run(`ALTER TABLE "MatchChallenge" ADD CONSTRAINT "MatchChallenge_reservationId_fkey" FOREIGN KEY ("reservationId") REFERENCES "Reservation"("id") ON DELETE SET NULL ON UPDATE CASCADE`, "MatchChallenge FK reservation");
+
+  // 어드민 계정 생성 (ADMIN_EMAIL / ADMIN_PASSWORD 환경변수 필요)
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    const hashed = await bcrypt.hash(adminPassword, 12);
+    const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (existing) {
+      await prisma.user.update({
+        where: { email: adminEmail },
+        data: { role: "admin", password: hashed },
+      });
+      results.push(`✅ 어드민 계정 업데이트: ${adminEmail}`);
+    } else {
+      await prisma.user.create({
+        data: { name: "관리자", email: adminEmail, password: hashed, role: "admin" },
+      });
+      results.push(`✅ 어드민 계정 생성: ${adminEmail}`);
+    }
+  } else {
+    results.push("⏭ 어드민 계정 생성 건너뜀 (ADMIN_EMAIL / ADMIN_PASSWORD 미설정)");
+  }
 
   return NextResponse.json({ ok: true, results });
 }
