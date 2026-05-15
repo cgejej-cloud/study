@@ -51,8 +51,8 @@ export async function PATCH(
     if (match.p1EloChange === null || match.p2EloChange === null) {
       return NextResponse.json({ error: "ELO 변동값이 없습니다." }, { status: 400 });
     }
-    await applyElo(id, match.player1Id, match.p1EloChange, match.player2Id, match.p2EloChange);
-    return NextResponse.json({ status: "confirmed" });
+    const result = await applyElo(id, match.player1Id, match.p1EloChange, match.player2Id, match.p2EloChange);
+    return NextResponse.json({ status: "confirmed", rewards: result?.rewards ?? null });
   }
 
   if (match.status !== "pending") {
@@ -67,14 +67,18 @@ export async function PATCH(
     if (match.p1EloChange === null || match.p2EloChange === null) {
       return NextResponse.json({ error: "포인트 변동값이 없습니다." }, { status: 400 });
     }
-    await applyElo(id, match.player1Id, match.p1EloChange, match.player2Id, match.p2EloChange);
+    const result = await applyElo(id, match.player1Id, match.p1EloChange, match.player2Id, match.p2EloChange);
     const sign = (match.p1EloChange ?? 0) >= 0 ? "+" : "";
     sendPushToUser(match.player1Id, {
       title: "경기 확인 완료",
       body: `ELO ${sign}${match.p1EloChange} 반영됐습니다.`,
       url: "/mypage",
     });
-    return NextResponse.json({ status: "confirmed" });
+    // 확인자(p2 또는 admin 경우 양쪽 모두) 본인 리워드를 응답에 포함
+    const myRewards =
+      session.id === match.player1Id ? result?.rewards.p1 :
+      session.id === match.player2Id ? result?.rewards.p2 : [];
+    return NextResponse.json({ status: "confirmed", rewards: myRewards ?? [] });
   }
 
   if (action === "dispute") {

@@ -181,7 +181,19 @@ export default function MyPage() {
       body: JSON.stringify({ action }),
     });
     if (res.ok) {
-      toast.show(action === "confirm" ? "경기를 승인했습니다." : "이의제기를 접수했습니다.", "success");
+      if (action === "confirm") {
+        const data = await res.json().catch(() => ({}));
+        const rewards = Array.isArray(data?.rewards) ? data.rewards : [];
+        if (rewards.length > 0) {
+          const total = rewards.reduce((acc: number, r: { amount: number }) => acc + r.amount, 0);
+          const breakdown = rewards.map((r: { note: string; amount: number }) => `${r.note} +${r.amount}`).join(", ");
+          toast.show(`🎁 +${total}pt 적립 (${breakdown})`, "success");
+        } else {
+          toast.show("경기를 승인했습니다.", "success");
+        }
+      } else {
+        toast.show("이의제기를 접수했습니다.", "success");
+      }
       setTick((t) => t + 1);
     } else {
       const data = await res.json().catch(() => ({}));
@@ -199,6 +211,12 @@ export default function MyPage() {
       <div className="flex items-center justify-between">
         <h1 className="font-extrabold text-[20px]" style={{ letterSpacing: "-0.03em" }}>마이페이지</h1>
         <div className="flex gap-2">
+          <Link
+            href="/mypage/rewards"
+            className="btn btn-outline" style={{ fontSize: "12px" }}
+          >
+            🎁 리워드
+          </Link>
           <Link
             href="/mypage/matches"
             className="btn btn-outline" style={{ fontSize: "12px" }}

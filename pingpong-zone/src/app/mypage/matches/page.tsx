@@ -1,8 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+type ResultFilter = "all" | "win" | "loss" | "pending" | "disputed";
+type PeriodFilter = "all" | "7d" | "30d" | "90d";
+
+const PERIOD_LABEL: Record<PeriodFilter, string> = {
+  all: "전체",
+  "7d": "1주",
+  "30d": "1개월",
+  "90d": "3개월",
+};
+
+const RESULT_LABEL: Record<ResultFilter, string> = {
+  all: "전체",
+  win: "승리",
+  loss: "패배",
+  pending: "대기중",
+  disputed: "이의",
+};
+
+function periodCutoff(period: PeriodFilter): number {
+  if (period === "all") return 0;
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+  return Date.now() - days * 24 * 60 * 60 * 1000;
+}
 
 type Match = {
   id: string;
@@ -127,10 +151,41 @@ export default function MatchHistoryPage() {
     setLoadingMore(false);
   }
 
+  // 필터 상태
+  const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("all");
+  const [opponentQ, setOpponentQ] = useState("");
+
   const confirmed = matches.filter((m) => m.status === "confirmed");
   const wins   = confirmed.filter((m) => m.winnerId === myId).length;
   const losses = confirmed.filter((m) => m.winnerId !== myId).length;
   const winRate = confirmed.length > 0 ? Math.round((wins / confirmed.length) * 100) : null;
+
+  // 필터링된 매치
+  const filteredMatches = useMemo(() => {
+    const cutoff = periodCutoff(periodFilter);
+    const q = opponentQ.trim().toLowerCase();
+    return matches.filter((m) => {
+      // 기간
+      if (cutoff > 0 && new Date(m.createdAt).getTime() < cutoff) return false;
+      // 결과
+      if (resultFilter !== "all") {
+        if (resultFilter === "win") {
+          if (m.status !== "confirmed" || m.winnerId !== myId) return false;
+        } else if (resultFilter === "loss") {
+          if (m.status !== "confirmed" || m.winnerId === myId) return false;
+        } else if (m.status !== resultFilter) return false;
+      }
+      // 상대 이름
+      if (q) {
+        const opName = (m.player1.id === myId ? m.player2.name : m.player1.name).toLowerCase();
+        if (!opName.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [matches, myId, resultFilter, periodFilter, opponentQ]);
+
+  const filterActive = resultFilter !== "all" || periodFilter !== "all" || opponentQ.trim() !== "";
 
   // 포인트 히스토리 재구성 (순서: 오래된 것부터)
   const chartData: number[] = [];
@@ -229,19 +284,91 @@ export default function MatchHistoryPage() {
         </div>
       )}
 
+      {/* 필터 */}
+      <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3">
+        <div>
+          <p className="text-[11px] font-semibold mb-1.5 text-gray-500">결과</p>
+          <div className="flex gap-1.5 flex-wrap" role="group" aria-label="결과 필터">
+            {(Object.keys(RESULT_LABEL) as ResultFilter[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setResultFilter(k)}
+                aria-pressed={resultFilter === k}
+                className={`text-[12px] px-3 py-1 rounded-full font-semibold transition-colors ${
+                  resultFilter === k
+                    ? "bg-green-700 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {RESULT_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold mb-1.5 text-gray-500">기간</p>
+          <div className="flex gap-1.5 flex-wrap" role="group" aria-label="기간 필터">
+            {(Object.keys(PERIOD_LABEL) as PeriodFilter[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setPeriodFilter(k)}
+                aria-pressed={periodFilter === k}
+                className={`text-[12px] px-3 py-1 rounded-full font-semibold transition-colors ${
+                  periodFilter === k
+                    ? "bg-green-700 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {PERIOD_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label htmlFor="opp-search" className="text-[11px] font-semibold mb-1.5 text-gray-500 block">상대 이름</label>
+          <div className="flex gap-2">
+            <input
+              id="opp-search"
+              type="search"
+              value={opponentQ}
+              onChange={(e) => setOpponentQ(e.target.value)}
+              placeholder="이름 일부로 검색"
+              className="flex-1 rounded-lg px-3 py-1.5 text-[13px] focus:outline-none"
+              style={{ border: "1px solid var(--border)" }}
+            />
+            {filterActive && (
+              <button
+                type="button"
+                onClick={() => { setResultFilter("all"); setPeriodFilter("all"); setOpponentQ(""); }}
+                className="text-[12px] px-3 py-1.5 rounded-lg font-semibold text-gray-600 hover:bg-gray-100"
+              >
+                초기화
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* 경기 목록 */}
       <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-4 py-3 border-b bg-gray-50">
+        <div className="px-4 py-3 border-b bg-gray-50 flex items-center justify-between">
           <span className="font-semibold text-gray-700 text-sm">최근 경기 기록</span>
+          <span className="text-[11px] text-gray-500">
+            {filterActive ? `필터 결과 ${filteredMatches.length} / ` : ""}전체 {matches.length}건
+          </span>
         </div>
         {loading ? (
           <div className="p-6 text-center text-gray-400 text-sm">불러오는 중...</div>
         ) : matches.length === 0 ? (
           <div className="p-6 text-center text-gray-400 text-sm">경기 기록이 없습니다.</div>
+        ) : filteredMatches.length === 0 ? (
+          <div className="p-6 text-center text-gray-400 text-sm">조건에 맞는 경기가 없습니다.</div>
         ) : (
           <>
           <div className="divide-y">
-            {matches.map((m) => {
+            {filteredMatches.map((m) => {
               const iWon = m.winnerId === myId;
               const iAmP1 = m.player1.id === myId;
               const opponent = iAmP1 ? m.player2 : m.player1;

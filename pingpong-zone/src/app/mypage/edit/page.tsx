@@ -23,6 +23,7 @@ export default function EditProfilePage() {
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [emailNotify, setEmailNotify] = useState(true);
+  const [agreedMarketing, setAgreedMarketing] = useState(false);
   const [racketType, setRacketType] = useState("");
   const [playStyle, setPlayStyle] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -52,6 +53,7 @@ export default function EditProfilePage() {
         setRacketType(data.racketType || "");
         setPlayStyle(data.playStyle || "");
         if (typeof data.emailNotify === "boolean") setEmailNotify(data.emailNotify);
+        if (typeof data.agreedMarketing === "boolean") setAgreedMarketing(data.agreedMarketing);
       });
   }, [router]);
 
@@ -70,6 +72,7 @@ export default function EditProfilePage() {
         profileColor: profileColor || null,
         phone,
         emailNotify,
+        agreedMarketing,
         avatar: avatar || null,
         racketType: racketType || null,
         playStyle: playStyle || null,
@@ -353,7 +356,7 @@ export default function EditProfilePage() {
           <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid var(--border)" }}>
             <div>
               <p className="text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>이메일 알림</p>
-              <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>예약 확정·경기 기록 알림 수신</p>
+              <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>예약 확정·경기 기록 등 거래성 알림</p>
             </div>
             <button
               type="button"
@@ -362,12 +365,44 @@ export default function EditProfilePage() {
               aria-checked={emailNotify}
               className="w-11 h-6 rounded-full transition-colors relative shrink-0"
               style={{ background: emailNotify ? "var(--jade-600)" : "var(--border)" }}
+              aria-label="이메일 알림 토글"
             >
               <span
                 className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
                 style={{ transform: emailNotify ? "translateX(20px)" : "translateX(2px)" }}
               />
             </button>
+          </div>
+          <div className="flex items-center justify-between py-2" style={{ borderTop: "1px solid var(--border)" }}>
+            <div>
+              <p className="text-[13px] font-semibold" style={{ color: "var(--text-1)" }}>마케팅 · 이벤트 수신 동의 <span className="text-[11px] font-normal" style={{ color: "var(--text-3)" }}>(선택)</span></p>
+              <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>신규 이벤트·시즌 시작·관내 행사 안내</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAgreedMarketing((v) => !v)}
+              role="switch"
+              aria-checked={agreedMarketing}
+              className="w-11 h-6 rounded-full transition-colors relative shrink-0"
+              style={{ background: agreedMarketing ? "var(--jade-600)" : "var(--border)" }}
+              aria-label="마케팅 수신 동의 토글"
+            >
+              <span
+                className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                style={{ transform: agreedMarketing ? "translateX(20px)" : "translateX(2px)" }}
+              />
+            </button>
+          </div>
+          <div className="py-2" style={{ borderTop: "1px solid var(--border)" }}>
+            <p className="text-[13px] font-semibold mb-1" style={{ color: "var(--text-1)" }}>내 데이터 다운로드</p>
+            <p className="text-[11px] mb-2" style={{ color: "var(--text-3)" }}>회원 정보·예약·경기 기록을 JSON으로 내보냅니다 (개인정보 이동권)</p>
+            <a
+              href="/api/me/export"
+              download
+              className="btn inline-block text-[12px] font-semibold"
+            >
+              ⬇ JSON 다운로드
+            </a>
           </div>
           <button type="submit" disabled={saving} className="btn btn-jade w-full py-3 font-bold text-[14px]">
             {saving ? "저장 중…" : "계정 정보 저장"}

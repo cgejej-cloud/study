@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import { useToast } from "@/components/Toast";
+import QuickChallengeButton from "@/components/QuickChallengeButton";
 
 const RACKET_LABEL: Record<string, string> = {
   shake: "셰이크핸드",
@@ -33,6 +34,8 @@ type Player = {
   playStyle: string | null;
   title: string | null;
   eloRating: number;
+  rewardPoints: number;
+  dailyStreak: number;
   joinedAt: string;
   stats: {
     total: number;
@@ -286,6 +289,13 @@ if (error) {
           )}
           <p className="text-[13px] mt-0.5" style={{ color: "var(--text-2)" }}>
             현재 포인트 <span className="font-bold" style={{ color: "var(--jade-700)" }}>{player.eloRating}점</span>
+            <span className="mx-1.5" style={{ color: "var(--border)" }}>·</span>
+            🎁 <span className="font-bold" style={{ color: "var(--jade-700)" }}>{player.rewardPoints?.toLocaleString() ?? 0}pt</span>
+            {player.dailyStreak >= 2 && (
+              <span className="ml-1.5 text-[11px]" style={{ color: "#c2410c" }}>
+                🔥 {player.dailyStreak}일
+              </span>
+            )}
           </p>
           <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>
             가입 · {new Date(player.joinedAt).toLocaleDateString("ko-KR")}
@@ -340,6 +350,7 @@ if (error) {
               >
                 ⚔️ 경기 신청 + 예약
               </Link>
+              <QuickChallengeButton opponentId={id} opponentName={player.nickname ?? player.name} />
             </div>
           )}
         </div>

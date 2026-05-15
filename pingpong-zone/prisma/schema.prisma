@@ -24,6 +24,20 @@ model User {
   playStyle           String?
   title               String?
   createdAt           DateTime              @default(now())
+  // 법적 동의 (개인정보보호법 / 약관)
+  agreedTermsAt       DateTime?
+  agreedPrivacyAt     DateTime?
+  agreedMarketing     Boolean               @default(false)
+  agreedMarketingAt   DateTime?
+  ageOver14           Boolean               @default(false)
+  consentIp           String?
+  consentUserAgent    String?
+  // 리워드 적립
+  rewardPoints        Int                   @default(0)
+  totalMatches        Int                   @default(0)
+  dailyStreak         Int                   @default(0)
+  lastMatchDate       String?
+  rewardEvents        RewardEvent[]
   reservations        Reservation[]
   reservationParticipations ReservationParticipant[]
   matchesAsPlayer1    Match[]               @relation("Player1Matches")
@@ -125,6 +139,20 @@ model Match {
   @@index([status, createdAt])
   @@index([seasonId])
   @@index([eventId])
+}
+
+model RewardEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // match_played | match_won | first_of_day | daily_streak | milestone_10 | milestone_50 | milestone_100
+  amount    Int
+  matchId   String?
+  metadata  String?  // JSON: { streak: N } 등
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([matchId, userId, type])
+  @@index([userId, createdAt])
 }
 
 model Notice {

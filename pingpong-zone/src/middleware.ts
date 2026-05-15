@@ -64,6 +64,18 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // /reserve: 예약 생성/확정 페이지는 로그인 필요
+  // (예외: /reserve/qr, /reserve/checkin, /reserve/session — QR 스캔/체크인은 공개)
+  const reserveAuthRequired =
+    pathname === "/reserve" || pathname.startsWith("/reserve/confirm");
+  if (reserveAuthRequired) {
+    if (!role) {
+      const url = new URL("/login", req.url);
+      url.searchParams.set("next", pathname + req.nextUrl.search);
+      return NextResponse.redirect(url);
+    }
+  }
+
   // /admin: 어드민 필요
   if (pathname.startsWith("/admin")) {
     if (!role) return NextResponse.redirect(new URL("/login", req.url));
@@ -75,5 +87,11 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/mypage/:path*", "/admin/:path*", "/api/:path*"],
+  matcher: [
+    "/mypage/:path*",
+    "/admin/:path*",
+    "/api/:path*",
+    "/reserve",
+    "/reserve/confirm/:path*",
+  ],
 };

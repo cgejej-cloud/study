@@ -22,6 +22,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
         playStyle: true,
         title: true,
         eloRating: true,
+        rewardPoints: true,
+        dailyStreak: true,
         createdAt: true,
         matchesAsPlayer1: {
           where: { status: "confirmed" },
@@ -132,6 +134,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       playStyle: user.playStyle ?? null,
       title: user.title ?? null,
       eloRating: user.eloRating,
+      rewardPoints: user.rewardPoints,
+      dailyStreak: user.dailyStreak,
       joinedAt: user.createdAt,
       stats: {
         total: totalAll,

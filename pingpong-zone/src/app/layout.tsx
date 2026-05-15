@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Providers from "@/components/Providers";
+import CookieBanner from "@/components/CookieBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main id="main-content" className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 animate-fade-in">
             {children}
           </main>
+          <CookieBanner />
         </Providers>
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {

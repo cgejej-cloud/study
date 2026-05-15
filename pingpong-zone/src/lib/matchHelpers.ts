@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendMatchPendingNotice } from "@/lib/email";
 import { ELO_FLOOR } from "@/lib/elo";
+import { grantMatchRewards, type GrantedReward } from "@/lib/rewards";
 
 export const AUTO_CONFIRM_HOURS = 24;
 
@@ -20,14 +21,14 @@ export async function applyElo(
   matchId: string,
   p1Id: string, p1Change: number,
   p2Id: string, p2Change: number,
-) {
+): Promise<{ rewards: { p1: GrantedReward[]; p2: GrantedReward[] } } | null> {
   const activeSeason = await prisma.season.findFirst({ where: { isActive: true } });
   // updateMany with status filter is the idempotency gate — prevents double-apply in race conditions
   const updated = await prisma.match.updateMany({
     where: { id: matchId, status: { in: ["pending", "disputed"] } },
     data:  { status: "confirmed", confirmedAt: new Date(), seasonId: activeSeason?.id ?? null },
   });
-  if (updated.count === 0) return;
+  if (updated.count === 0) return null;
 
   // 하한선 적용: ELO_FLOOR 미만으로 내려가지 않도록
   const [p1, p2] = await prisma.$transaction([
@@ -41,6 +42,21 @@ export async function applyElo(
     prisma.user.update({ where: { id: p1Id }, data: { eloRating: { increment: safeP1Change } } }),
     prisma.user.update({ where: { id: p2Id }, data: { eloRating: { increment: safeP2Change } } }),
   ]);
+
+  // 리워드 적립 — 매치 확정과 같은 라이프사이클에서 발생, 단 별도 트랜잭션
+  // (실패해도 ELO 반영은 유지 — 리워드는 backfill 가능)
+  const match = await prisma.match.findUnique({ where: { id: matchId }, select: { winnerId: true } });
+  const winnerId = match?.winnerId;
+  const p1Rewards = await grantMatchRewards(matchId, p1Id, winnerId === p1Id).catch((e) => {
+    console.error("[reward p1 failed]", matchId, p1Id, e);
+    return [];
+  });
+  const p2Rewards = await grantMatchRewards(matchId, p2Id, winnerId === p2Id).catch((e) => {
+    console.error("[reward p2 failed]", matchId, p2Id, e);
+    return [];
+  });
+
+  return { rewards: { p1: p1Rewards, p2: p2Rewards } };
 }
 
 export async function notifyOpponent(opts: {
