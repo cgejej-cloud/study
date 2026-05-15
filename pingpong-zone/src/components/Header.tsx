@@ -7,6 +7,7 @@ import NotificationBell from "@/components/NotificationBell";
 import GlobalSearch from "@/components/GlobalSearch";
 import ThemeToggle from "@/components/ThemeToggle";
 import Avatar from "@/components/Avatar";
+import LiveBadge from "@/components/LiveBadge";
 
 type HeaderUser = {
   id: string;
@@ -89,6 +90,7 @@ export default function Header() {
         {/* 네비게이션 */}
         <nav className="flex items-center gap-0.5 min-w-0">
           <ThemeToggle />
+          <LiveBadge />
           <NavLink href="/reserve" label="예약" pathname={pathname} />
           <NavLink href="/reserve/checkin" label="체크인" pathname={pathname} />
           <NavLink href="/ranking" label="랭킹" pathname={pathname} />

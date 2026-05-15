@@ -531,6 +531,39 @@ await run(
   }
 );
 
+// ─── 시나리오 17: 라이브 스코어보드 / Spectator (신규) ────────────────
+await run(
+  "17_라이브_스코어_관전",
+  "공개 /spectate 목록 + /spectate/[id] 대형 스코어 디스플레이 + 헤더 LIVE 칩",
+  "로그인 없이도 진행 중인 경기 목록 + 단일 세션 라이브 점수 표시, SSE 연결 시도",
+  async (s) => {
+    // 비로그인 컨텍스트로 시작 (관전은 누구나 가능)
+    const { page, ctx } = await newPage();
+    await ctx.clearCookies();
+
+    await page.goto(`${BASE}/spectate`, { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+    await shot(s, page, "라이브_목록_공개");
+
+    // 첫 라이브 카드 클릭
+    const firstCard = page.locator('a[href^="/spectate/"]').first();
+    if (await firstCard.count() > 0) {
+      await firstCard.click();
+      await page.waitForLoadState("load").catch(() => {});
+      await page.waitForTimeout(1800);
+      await shot(s, page, "스코어보드_대형_화면");
+    } else {
+      await shot(s, page, "라이브_없음");
+    }
+
+    // 로그인 후 헤더에 LIVE 칩 노출 확인
+    await login(page, "minjun@demo.local", "password1234");
+    await page.goto(`${BASE}/`, { waitUntil: "load" });
+    await page.waitForTimeout(1500);
+    await shot(s, page, "헤더_LIVE_칩");
+  }
+);
+
 await browser.close();
 
 await writeFile(path.join(OUT, "..", "scenarios.json"), JSON.stringify(scenarios, null, 2));
