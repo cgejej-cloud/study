@@ -21,8 +21,28 @@ export interface PushPayload {
   icon?: string;
 }
 
-export async function sendPushToUser(userId: string, payload: PushPayload) {
+export type PushCategory = "match" | "challenge" | "general";
+
+export async function sendPushToUser(
+  userId: string,
+  payload: PushPayload,
+  category: PushCategory = "general",
+) {
   if (!configured) return;
+
+  // 카테고리별 사용자 환경설정 확인 — "general" 은 항상 발송
+  if (category !== "general") {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { notifyMatch: true, notifyChallenge: true },
+    });
+    if (user) {
+      const allowed =
+        category === "match"     ? user.notifyMatch     :
+        category === "challenge" ? user.notifyChallenge : true;
+      if (!allowed) return;
+    }
+  }
 
   const subs = await prisma.pushSubscription.findMany({ where: { userId } });
   if (subs.length === 0) return;

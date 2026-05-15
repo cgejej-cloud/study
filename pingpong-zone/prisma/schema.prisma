@@ -38,6 +38,9 @@ model User {
   dailyStreak         Int                   @default(0)
   lastMatchDate       String?
   rewardEvents        RewardEvent[]
+  // 푸시 알림 카테고리별 환경설정
+  notifyMatch         Boolean               @default(true)
+  notifyChallenge     Boolean               @default(true)
   reservations        Reservation[]
   reservationParticipations ReservationParticipant[]
   matchesAsPlayer1    Match[]               @relation("Player1Matches")

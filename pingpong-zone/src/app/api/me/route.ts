@@ -10,7 +10,7 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.id },
-    select: { id: true, name: true, email: true, role: true, nickname: true, bio: true, profileColor: true, phone: true, emailNotify: true, avatar: true, racketType: true, playStyle: true, title: true, agreedMarketing: true, agreedMarketingAt: true },
+    select: { id: true, name: true, email: true, role: true, nickname: true, bio: true, profileColor: true, phone: true, emailNotify: true, avatar: true, racketType: true, playStyle: true, title: true, agreedMarketing: true, agreedMarketingAt: true, notifyMatch: true, notifyChallenge: true },
   });
   if (!user) return NextResponse.json(null);
   if (user.role !== session.role || user.name !== session.name) {
@@ -24,7 +24,7 @@ export async function PATCH(req: NextRequest) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 
-  const { name, nickname, bio, profileColor, phone, currentPassword, newPassword, emailNotify, avatar, racketType, playStyle, title, agreedMarketing } = await req.json();
+  const { name, nickname, bio, profileColor, phone, currentPassword, newPassword, emailNotify, avatar, racketType, playStyle, title, agreedMarketing, notifyMatch, notifyChallenge } = await req.json();
 
   if (!validateName(name)) {
     return NextResponse.json({ error: "이름은 2~30자로 입력해주세요." }, { status: 400 });
@@ -80,6 +80,8 @@ export async function PATCH(req: NextRequest) {
     updateData.agreedMarketing = agreedMarketing;
     updateData.agreedMarketingAt = agreedMarketing ? new Date() : null;
   }
+  if (typeof notifyMatch === "boolean") updateData.notifyMatch = notifyMatch;
+  if (typeof notifyChallenge === "boolean") updateData.notifyChallenge = notifyChallenge;
 
   const updated = await prisma.user.update({ where: { id: session.id }, data: updateData });
   await createSession({ id: updated.id, name: updated.name, email: updated.email, role: updated.role });

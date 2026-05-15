@@ -73,7 +73,7 @@ export async function PATCH(
       title: "경기 확인 완료",
       body: `ELO ${sign}${match.p1EloChange} 반영됐습니다.`,
       url: "/mypage",
-    });
+    }, "match");
     // 확인자(p2 또는 admin 경우 양쪽 모두) 본인 리워드를 응답에 포함
     const myRewards =
       session.id === match.player1Id ? result?.rewards.p1 :

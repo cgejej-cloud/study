@@ -24,6 +24,8 @@ export default function EditProfilePage() {
   const [phone, setPhone] = useState("");
   const [emailNotify, setEmailNotify] = useState(true);
   const [agreedMarketing, setAgreedMarketing] = useState(false);
+  const [notifyMatch, setNotifyMatch] = useState(true);
+  const [notifyChallenge, setNotifyChallenge] = useState(true);
   const [racketType, setRacketType] = useState("");
   const [playStyle, setPlayStyle] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -54,6 +56,8 @@ export default function EditProfilePage() {
         setPlayStyle(data.playStyle || "");
         if (typeof data.emailNotify === "boolean") setEmailNotify(data.emailNotify);
         if (typeof data.agreedMarketing === "boolean") setAgreedMarketing(data.agreedMarketing);
+        if (typeof data.notifyMatch === "boolean") setNotifyMatch(data.notifyMatch);
+        if (typeof data.notifyChallenge === "boolean") setNotifyChallenge(data.notifyChallenge);
       });
   }, [router]);
 
@@ -73,6 +77,8 @@ export default function EditProfilePage() {
         phone,
         emailNotify,
         agreedMarketing,
+        notifyMatch,
+        notifyChallenge,
         avatar: avatar || null,
         racketType: racketType || null,
         playStyle: playStyle || null,
@@ -392,6 +398,36 @@ export default function EditProfilePage() {
                 style={{ transform: agreedMarketing ? "translateX(20px)" : "translateX(2px)" }}
               />
             </button>
+          </div>
+          <div className="py-3" style={{ borderTop: "1px solid var(--border)" }}>
+            <p className="text-[13px] font-semibold mb-2.5" style={{ color: "var(--text-1)" }}>🔔 푸시 알림 카테고리</p>
+            <div className="space-y-2 pl-1">
+              {([
+                { key: "match", state: notifyMatch, set: setNotifyMatch, label: "경기 확인·결과", hint: "내가 기록한 경기 확정 알림" },
+                { key: "challenge", state: notifyChallenge, set: setNotifyChallenge, label: "도전장 수신", hint: "다른 회원이 보낸 경기 신청 알림" },
+              ] as const).map((item) => (
+                <div key={item.key} className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[12.5px] font-semibold" style={{ color: "var(--text-1)" }}>{item.label}</p>
+                    <p className="text-[10.5px] mt-0.5" style={{ color: "var(--text-3)" }}>{item.hint}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => item.set((v) => !v)}
+                    role="switch"
+                    aria-checked={item.state}
+                    aria-label={`${item.label} 토글`}
+                    className="w-10 h-5.5 rounded-full transition-colors relative shrink-0"
+                    style={{ background: item.state ? "var(--jade-600)" : "var(--border)", width: 40, height: 22 }}
+                  >
+                    <span
+                      className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"
+                      style={{ transform: item.state ? "translateX(20px)" : "translateX(2px)" }}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="py-2" style={{ borderTop: "1px solid var(--border)" }}>
             <p className="text-[13px] font-semibold mb-1" style={{ color: "var(--text-1)" }}>내 데이터 다운로드</p>

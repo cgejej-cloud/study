@@ -212,6 +212,12 @@ export default function MyPage() {
         <h1 className="font-extrabold text-[20px]" style={{ letterSpacing: "-0.03em" }}>마이페이지</h1>
         <div className="flex gap-2">
           <Link
+            href="/match/find"
+            className="btn btn-outline" style={{ fontSize: "12px" }}
+          >
+            🎯 상대 찾기
+          </Link>
+          <Link
             href="/mypage/rewards"
             className="btn btn-outline" style={{ fontSize: "12px" }}
           >

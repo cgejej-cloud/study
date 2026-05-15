@@ -6,6 +6,7 @@ import NoticeBanner from "@/components/NoticeBanner";
 import EventBanner from "@/components/EventBanner";
 import ActivityFeed from "@/components/ActivityFeed";
 import MyStatusCard from "@/components/MyStatusCard";
+import SuggestionsTeaser from "@/components/SuggestionsTeaser";
 
 export default function HomePage() {
   return (
@@ -13,6 +14,7 @@ export default function HomePage() {
       <NoticeBanner />
       <EventBanner />
       <MyStatusCard />
+      <SuggestionsTeaser />
 
       {/* ── 히어로 ─────────────────────────────── */}
       <section

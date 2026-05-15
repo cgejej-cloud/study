@@ -503,6 +503,34 @@ await run(
   }
 );
 
+// ─── 시나리오 16: 매칭 추천 + 알림 환경설정 (신규 기능) ────────────────
+await run(
+  "16_매칭추천_알림설정",
+  "홈 SuggestionsTeaser + /match/find + 마이페이지 알림 카테고리 토글",
+  "로그인 시 추천 상대 카드 노출, /match/find 4섹션, /mypage/edit 에 카테고리 토글",
+  async (s) => {
+    const { page } = await newPage();
+    await login(page, "seoyeon@demo.local", "password1234");
+
+    // 홈에서 추천 티저 확인
+    await page.goto(`${BASE}/`, { waitUntil: "load" });
+    await page.waitForTimeout(1200);
+    await shot(s, page, "홈_추천_티저");
+
+    // 상대 찾기 페이지
+    await page.goto(`${BASE}/match/find`, { waitUntil: "load" });
+    await page.waitForTimeout(1200);
+    await shot(s, page, "상대찾기_전체");
+
+    // 알림 환경설정 — 마이페이지 수정 페이지의 계정 탭으로
+    await page.goto(`${BASE}/mypage/edit`, { waitUntil: "load" });
+    await page.waitForTimeout(800);
+    await page.click('button:has-text("계정")').catch(() => {});
+    await page.waitForTimeout(400);
+    await shot(s, page, "알림_카테고리_토글");
+  }
+);
+
 await browser.close();
 
 await writeFile(path.join(OUT, "..", "scenarios.json"), JSON.stringify(scenarios, null, 2));

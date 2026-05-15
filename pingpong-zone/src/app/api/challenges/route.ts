@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
     title: "경기 신청이 도착했습니다",
     body: `${session.name}님이 경기를 신청했습니다.`,
     url: "/mypage",
-  });
+  }, "challenge");
 
   return NextResponse.json(challenge, { status: 201 });
 }
