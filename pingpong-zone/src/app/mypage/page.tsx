@@ -190,6 +190,7 @@ export default function MyPage() {
   }
 
   const today = new Date().toISOString().split("T")[0];
+  const todayKst = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
   const upcoming = reservations.filter((r) => r.status === "confirmed" && r.date >= today);
   const past     = reservations.filter((r) => r.status !== "confirmed" || r.date < today);
 
@@ -386,7 +387,7 @@ export default function MyPage() {
         ) : (
           <div className="space-y-2">
             {upcoming.map((r) => {
-              const isToday = r.date === new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split("T")[0];
+              const isToday = r.date === todayKst;
               return (
                 <div key={r.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm">
                   <div className="flex items-center justify-between">
