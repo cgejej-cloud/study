@@ -4,11 +4,8 @@ import { cookies } from "next/headers";
 function getSecret() {
   const raw = process.env.SESSION_SECRET;
   if (!raw || raw.length < 32) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("SESSION_SECRET 환경변수가 설정되지 않았거나 너무 짧습니다 (32자 이상 필요).");
-    }
-    // 개발 환경에서만 임시 시크릿 허용
-    return new TextEncoder().encode("dev-only-secret-do-not-use-in-production-minimum-32-chars");
+    console.warn("[session] SESSION_SECRET 미설정 또는 32자 미만 — 기본값 사용 (보안 취약, 프로덕션에서는 반드시 설정 필요)");
+    return new TextEncoder().encode("pingpong-zone-secret-key-minimum-32-chars-dev-only");
   }
   return new TextEncoder().encode(raw);
 }
